@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nellus Coworking - Gestão Integrada</title>
+  
+  <!-- Ícones do Aplicativo / Favicon -->
+  <link rel="icon" type="image/png" sizes="180x180" href="apple_touch_icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple_touch_icon.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="app_icon_512.png">
+  
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #EFEAE0;
+      font-family: 'Manrope', system-ui, sans-serif;
+    }
+
+    .nellus-app {
+      --ink: #1B2420;
+      --muted: #8A8578;
+      --paper: #F7F5F0;
+      --surface: #FFFFFF;
+      --border: #E4DFD3;
+      --teal: #0E6E56;
+      --teal-deep: #0A4F3E;
+      --orange: #E08A52;
+      --orange-deep: #C96B34;
+      --up: #1F9D6C;
+      --down: #C1483B;
+      font-family: 'Manrope', system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      display: grid;
+      grid-template-columns: 236px 1fr;
+      min-height: 720px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .nellus-app * { box-sizing: border-box; }
+
+    /* Sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, var(--teal-deep), #08392C 85%);
+      color: #EFEAE0;
+      padding: 26px 18px;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px 28px; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .brand-text b { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; letter-spacing: 0.2px; }
+    .brand-text span { font-size: 11.5px; color: #B9CFC5; letter-spacing: 0.3px; }
+
+    .nav { display: flex; flex-direction: column; gap: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: 10px;
+      background: transparent; border: none; cursor: pointer;
+      color: #D8E6DE; font-family: inherit; font-size: 14.5px; font-weight: 500;
+      text-align: left; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); }
+    .nav-item.active { background: var(--orange); color: #1B2420; font-weight: 600; }
+
+    .sidebar-foot {
+      margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px; color: #9FC2B2; line-height: 1.5;
+    }
+    .sidebar-foot b { color: #EFEAE0; font-size: 13px; }
+
+    /* Main Content */
+    .main { padding: 28px 32px 32px; overflow-y: auto; }
+    .view-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .view-head h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+    .view-head p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+    .btn-group { display: flex; gap: 8px; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--orange); color: #23140A; border: none;
+      padding: 10px 16px; border-radius: 10px; font-family: inherit;
+      font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: background 0.15s ease, transform 0.1s ease;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--orange-deep); color: #fff; }
+    .btn-primary.secondary { background: #E4DFD3; color: #1B2420; }
+    .btn-primary.secondary:hover { background: #D0C9B8; }
+    .btn-primary.full { width: 100%; justify-content: center; margin-top: 8px; }
+
+    .icon-btn {
+      border: none; background: var(--surface); border: 1px solid var(--border);
+      width: 32px; height: 32px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; cursor: pointer; color: var(--ink);
+    }
+    .icon-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+    .icon-btn.ghost:hover { background: #F1ECE1; color: var(--down); }
+
+    /* Forms & Inputs */
+    .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+    .field input, .field select {
+      padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+      font-family: inherit; font-size: 13.5px; outline: none; background: #fff;
+    }
+    .field input:focus, .field select:focus { border-color: var(--teal); }
+
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+
+    .radio-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .radio-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+      border-radius: 20px; border: 1px solid var(--border); font-size: 12.5px;
+      cursor: pointer; background: #fff; font-weight: 500;
+    }
+    .radio-pill.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+    .radio-pill input { display: none; }
+
+    /* Modals */
+    .modal-veil {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--surface); border-radius: 14px; width: 100%; max-width: 480px;
+      padding: 20px 24px; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
+
+    /* Type Badge */
+    .type-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+      background: #F0EFEA; color: var(--ink);
+    }
+
+    .type-settings-bar {
+      display: flex; gap: 12px; margin-bottom: 18px; padding: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      align-items: center; flex-wrap: wrap;
+    }
+    .type-input-group { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+    .type-input-group input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
+
+    .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .client-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .client-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .client-line { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
+
+    /* Agenda */
+    .date-rail { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .date-chip {
+      border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+      padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; font-weight: 500;
+    }
+    .date-chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+    .agenda-list { display: flex; flex-direction: column; gap: 10px; }
+    .agenda-row {
+      display: flex; align-items: center; gap: 16px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px;
+    }
+    .agenda-time { font-size: 13px; color: var(--muted); width: 110px; flex-shrink: 0; }
+    .agenda-main { display: flex; flex-direction: column; flex: 1; }
+
+    /* Stats & Charts */
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+    .stat-value.up { color: var(--up); }
+    .stat-value.down { color: var(--down); }
+
+    .tx-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px; margin-bottom: 20px;
+    }
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-main { display: flex; flex-direction: column; flex: 1; }
+    .tx-amount { font-weight: 700; font-size: 14px; }
+    .tx-amount.up { color: var(--up); }
+    .tx-amount.down { color: var(--down); }
+
+    .muted { color: var(--muted); font-size: 12px; }
+    .empty-state { padding: 30px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useMemo } = React;
+
+  const initialClients = [
+    { id: "c1", name: "Marina Albuquerque", document: "184.223.660-05", address: "Rua das Acácias, 220 — Volta Redonda/RJ", type: "presencial", phone: "(24) 99811-2234", email: "marina.alb@gmail.com", since: "2026-02-10" },
+    { id: "c2", name: "Estúdio Cravo Design", document: "41.882.203/0001-90", address: "Av. Beira Rio, 88 — VR/RJ", type: "salaFixa", phone: "(24) 99722-0091", email: "contato@cravodesign.com", since: "2025-11-02" },
+    { id: "c3", name: "Rafael Bittencourt Advocacia", document: "29.917.004/0001-11", address: "Rua Coronel Julião, 55 — VR/RJ", type: "virtual", phone: "(24) 99655-8820", email: "rafael@bittencourtadv.com", since: "2026-04-18" },
+  ];
+
+  const initialBookings = [
+    { id: "b1", clientName: "Marina Albuquerque", date: "2026-09-01", start: "09:00", end: "12:00", room: "Estação 3", notes: "Reunião com fornecedor" },
+    { id: "b2", clientName: "Rafael Bittencourt Advocacia", date: "2026-09-01", start: "10:00", end: "10:30", room: "Sala de reunião", notes: "Ligação com cliente" },
+    { id: "b3", clientName: "Estúdio Cravo Design", date: "2026-09-02", start: "08:30", end: "18:00", room: "Sala 4 (fixa)", notes: "" },
+  ];
+
+  const initialTx = [
+    { id: "t1", type: "entrada", desc: "Mensalidade — Estúdio Cravo Design", amount: 890, date: "2026-08-05", category: "Mensalidade" },
+    { id: "t2", type: "entrada", desc: "Escritório virtual — Rafael Bittencourt", amount: 250, date: "2026-08-06", category: "Virtual" },
+    { id: "t3", type: "saida", desc: "Conta de energia", amount: 580, date: "2026-08-18", category: "Contas fixas" },
+    { id: "t4", type: "entrada", desc: "Mensalidade — Nuvem Contábil", amount: 950, date: "2026-09-01", category: "Mensalidade" },
+    { id: "t5", type: "entrada", desc: "Diárias avulsas (8)", amount: 480, date: "2026-09-01", category: "Diária" },
+  ];
+
+  const money = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  function uid(p) { return p + Math.random().toString(36).slice(2, 7); }
+
+  function Modal({ title, onClose, children }) {
+    return (
+      <div className="modal-veil" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className="modal">
+          <div className="modal-head">
+            <h3>{title}</h3>
+            <button className="icon-btn" onClick={onClose}>✕</button>
+          </div>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  function Agenda({ bookings, clients, onAdd, onRemove }) {
+    const [activeDate, setActiveDate] = useState("2026-09-01");
+    const [showForm, setShowForm] = useState(false);
+    const [isCustom, setIsCustom] = useState(false);
+    const [draft, setDraft] = useState({ clientName: "", date: "2026-09-01", start: "09:00", end: "10:00", room: "", notes: "" });
+
+    const dayBookings = bookings.filter((b) => b.date === activeDate);
+
+    const submit = (e) => {
+      e.preventDefault();
+      if (!draft.clientName || !draft.room) return;
+      onAdd({ ...draft, id: uid("b") });
+      setShowForm(false);
+      setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
+    };
+
+    return (
+      <div className="view">
+        <div className="view-head">
+          <div>
+            <h2>Agenda</h2>
+            <p>Reservas de estações, salas e horários do coworking.</p>
+          </div>
+          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
+        </div>
+
+        <div className="date-rail">
+          {["2026-09-01", "2026-09-02", "2026-09-03"].map((d) => (
+            <button key={d} className={"date-chip" + (d === activeDate ? " active" : "")} onClick={() => setActiveDate(d)}>
+              {d.split('-').reverse().join('/')}
+            </button>
+          ))}
+        </div>
+
+        <div className="agenda-list">
+          {dayBookings.length === 0 && <div className="empty-state">Nenhum agendamento para este dia.</div>}
+          {dayBookings.map((b) => (
+            <div className="agenda-row" key={b.id}>
+              <div className="agenda-time">⏱ {b.start} – {b.end}</div>
+              <div className="agenda-main">
+                <strong>{b.clientName}</strong>
+                <span className="muted">{b.room} {b.notes && `· ${b.notes}`}</span>
+              </div>
+              <button className="icon-btn ghost" onClick={() => onRemove(b.id)}>🗑</button>
+            </div>
+          ))}
+        </div>
+
+        {showForm && (
+          <Modal title="Novo agendamento" onClose={() => setShowForm(false)}>
+            <form onSubmit={submit}>
+              <div className="field">
+                <label>Cliente</label>
+                {!isCustom ? (
+                  <select value={draft.clientName} onChange={(e) => {
+                    if (e.target.value === "NEW") { setIsCustom(true); setDraft({ ...draft, clientName: "" }); }
+                    else setDraft({ ...draft, clientName: e.target.value });
+                  }}>
+                    <option value="">Selecione um cliente...</option>
+                    {clients.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <option value="NEW">+ Inserir cliente avulso / não cadastrado</option>
+                  </select>
+                ) : (
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <input placeholder="Digite o nome do cliente avulso..." value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} style={{ flex: 1 }} />
+                    <button type="button" className="btn-primary secondary" onClick={() => setIsCustom(false)}>Lista</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-row">
+                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+                <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
+                <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
+              </div>
+
+              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Estação 4, Sala de Reunião" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} /></div>
+              <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
+
+              <button className="btn-primary full" type="submit">Salvar Agendamento</button>
+            </form>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onRemove }) {
+    const [showForm, setShowForm] = useState(false);
+    const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
+
+    const submit = (e) => {
+      e.preventDefault();
+      onAdd({ ...draft, id: uid("c"), since: "2026-09-01" });
+      setShowForm(false);
+      setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
+    };
+
+    return (
+      <div className="view">
+        <div className="view-head">
+          <div>
+            <h2>Clientes</h2>
+            <p>Gerenciamento de contratos e cadastros do coworking.</p>
+          </div>
+          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
+        </div>
+
+        <div className="type-settings-bar">
+          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Nomes dos Planos:</span>
+          <div className="type-input-group">
+            <span style={{ color: "#E08A52" }}>●</span>
+            <input value={typeLabels.presencial} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
+          </div>
+          <div className="type-input-group">
+            <span style={{ color: "#0E6E56" }}>●</span>
+            <input value={typeLabels.salaFixa} onChange={(e) => setTypeLabels({ ...typeLabels, salaFixa: e.target.value })} />
+          </div>
+          <div className="type-input-group">
+            <span style={{ color: "#3E7CB1" }}>●</span>
+            <input value={typeLabels.virtual} onChange={(e) => setTypeLabels({ ...typeLabels, virtual: e.target.value })} />
+          </div>
+        </div>
+
+        <div className="client-grid">
+          {clients.map((c) => (
+            <div className="client-card" key={c.id}>
+              <div className="client-card-top">
+                <div>
+                  <strong>{c.name || "Sem Nome"}</strong>
+                  <div className="muted">{c.document || "Doc. não informado"}</div>
+                </div>
+                <span className="type-badge">{typeLabels[c.type] || c.type}</span>
+              </div>
+              {c.address && <div className="client-line">📍 {c.address}</div>}
+              {c.phone && <div className="client-line">📞 {c.phone}</div>}
+              {c.email && <div className="client-line">✉️ {c.email}</div>}
+              <div className="client-card-foot">
+                <span className="muted">Desde {c.since}</span>
+                <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {showForm && (
+          <Modal title="Novo cliente" onClose={() => setShowForm(false)}>
+            <form onSubmit={submit}>
+              <div className="field"><label>Nome / Razão social</label><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Opcional" /></div>
+              <div className="field"><label>CPF / CNPJ</label><input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} placeholder="Opcional" /></div>
+              <div className="field"><label>Endereço</label><input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="Opcional" /></div>
+              <div className="field">
+                <label>Tipo de Contrato</label>
+                <div className="radio-row">
+                  {Object.keys(typeLabels).map((t) => (
+                    <label key={t} className={"radio-pill" + (draft.type === t ? " active" : "")}>
+                      <input type="radio" checked={draft.type === t} onChange={() => setDraft({ ...draft, type: t })} />
+                      {typeLabels[t]}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Opcional" /></div>
+                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Opcional" /></div>
+              </div>
+
+              <button className="btn-primary full" type="submit">Cadastrar Cliente</button>
+            </form>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  function Financeiro({ tx, onAdd, onRemove }) {
+    const [showForm, setShowForm] = useState(false);
+    const [draft, setDraft] = useState({ type: "entrada", desc: "", amount: "", date: "2026-09-01", category: "" });
+
+    const totals = useMemo(() => {
+      const entradas = tx.filter((t) => t.type === "entrada").reduce((s, t) => s + t.amount, 0);
+      const saidas = tx.filter((t) => t.type === "saida").reduce((s, t) => s + t.amount, 0);
+      return { entradas, saidas, saldo: entradas - saidas };
+    }, [tx]);
+
+    const submit = (e) => {
+      e.preventDefault();
+      const amount = parseFloat(draft.amount);
+      if (!draft.desc || !amount) return;
+      onAdd({ ...draft, amount, id: uid("t") });
+      setShowForm(false);
+      setDraft({ type: "entrada", desc: "", amount: "", date: draft.date, category: "" });
+    };
+
+    return (
+      <div className="view">
+        <div className="view-head">
+          <div>
+            <h2>Financeiro</h2>
+            <p>Acompanhamento de fluxo de caixa, relatórios e exportações.</p>
+          </div>
+          <div className="btn-group">
+            <a href="Relatorio_Financeiro_Nellus_Coworking.xlsx" download className="btn-primary secondary">📊 Baixar Excel (.xlsx)</a>
+            <a href="Resumo_Financeiro_Nellus_Coworking.pdf" download className="btn-primary secondary">📄 Baixar PDF</a>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
+          </div>
+        </div>
+
+        <div className="stat-row">
+          <div className="stat-card">
+            <span className="stat-label">Entradas</span>
+            <strong className="stat-value up">{money(totals.entradas)}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Saídas</span>
+            <strong className="stat-value down">{money(totals.saidas)}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Saldo Acumulado</span>
+            <strong className={"stat-value " + (totals.saldo >= 0 ? "up" : "down")}>{money(totals.saldo)}</strong>
+          </div>
+        </div>
+
+        <div className="tx-panel">
+          <div className="tx-list">
+            {tx.map((t) => (
+              <div className="tx-row" key={t.id}>
+                <div className="tx-main">
+                  <strong>{t.desc}</strong>
+                  <span className="muted">{t.category || "Sem categoria"} · {t.date}</span>
+                </div>
+                <span className={"tx-amount " + (t.type === "entrada" ? "up" : "down")}>
+                  {t.type === "entrada" ? "+" : "−"} {money(t.amount)}
+                </span>
+                <button className="icon-btn ghost" onClick={() => onRemove(t.id)}>🗑</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {showForm && (
+          <Modal title="Novo lançamento" onClose={() => setShowForm(false)}>
+            <form onSubmit={submit}>
+              <div className="radio-row">
+                <label className={"radio-pill" + (draft.type === "entrada" ? " active" : "")}>
+                  <input type="radio" checked={draft.type === "entrada"} onChange={() => setDraft({ ...draft, type: "entrada" })} /> Entrada
+                </label>
+                <label className={"radio-pill" + (draft.type === "saida" ? " active" : "")}>
+                  <input type="radio" checked={draft.type === "saida"} onChange={() => setDraft({ ...draft, type: "saida" })} /> Saída
+                </label>
+              </div>
+              <div className="field"><label>Descrição</label><input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required /></div>
+              <div className="form-row">
+                <div className="field"><label>Valor (R$)</label><input type="number" step="0.01" value={draft.amount} onChange={(e) => setDraft({ ...draft, amount: e.target.value })} required /></div>
+                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+              </div>
+              <div className="field"><label>Categoria</label><input value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} /></div>
+              <button className="btn-primary full" type="submit">Salvar Lançamento</button>
+            </form>
+          </Modal>
+        )}
+      </div>
+    );
+  }
+
+  function NellusApp() {
+    const [tab, setTab] = useState("agenda");
+    const [clients, setClients] = useState(initialClients);
+    const [bookings, setBookings] = useState(initialBookings);
+    const [tx, setTx] = useState(initialTx);
+    const [typeLabels, setTypeLabels] = useState({
+      presencial: "Presencial",
+      salaFixa: "Sala fixa",
+      virtual: "Escritório virtual"
+    });
+
+    return (
+      <div className="nellus-app">
+        <div className="sidebar">
+          <div className="brand">
+            <img src="apple_touch_icon.png" className="brand-icon" alt="Logo Nellus" />
+            <div className="brand-text">
+              <b>Nellus</b>
+              <span>Coworking Management</span>
+            </div>
+          </div>
+          <div className="nav">
+            <button className={"nav-item" + (tab === "agenda" ? " active" : "")} onClick={() => setTab("agenda")}>📅 Agenda</button>
+            <button className={"nav-item" + (tab === "clientes" ? " active" : "")} onClick={() => setTab("clientes")}>👥 Clientes</button>
+            <button className={"nav-item" + (tab === "financeiro" ? " active" : "")} onClick={() => setTab("financeiro")}>💼 Financeiro</button>
+          </div>
+          <div className="sidebar-foot">
+            <b>Nellus Coworking</b><br/>Painel Operacional v2.0
+          </div>
+        </div>
+
+        <div className="main">
+          {tab === "agenda" && (
+            <Agenda
+              bookings={bookings}
+              clients={clients}
+              onAdd={(b) => setBookings([...bookings, b])}
+              onRemove={(id) => setBookings(bookings.filter(b => b.id !== id))}
+            />
+          )}
+          {tab === "clientes" && (
+            <Clientes
+              clients={clients}
+              typeLabels={typeLabels}
+              setTypeLabels={setTypeLabels}
+              onAdd={(c) => setClients([...clients, c])}
+              onRemove={(id) => setClients(clients.filter(c => c.id !== id))}
+            />
+          )}
+          {tab === "financeiro" && (
+            <Financeiro
+              tx={tx}
+              onAdd={(t) => setTx([...tx, t])}
+              onRemove={(id) => setTx(tx.filter(t => t.id !== id))}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<NellusApp />);
+</script>
+
+</body>
+</html>
