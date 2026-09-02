@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>Nellus Coworking - Gestão</title>
+  
+  <!-- React & Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Bibliotecas para exportação XLS e PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
@@ -32,8 +39,8 @@
       color: var(--ink);
       background: var(--paper);
       display: grid;
-      grid-template-columns: 236px 1fr;
-      min-height: 720px;
+      grid-template-columns: 240px 1fr;
+      min-height: 760px;
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -71,21 +78,24 @@
     .sidebar-foot b { color: #EFEAE0; font-size: 13px; }
 
     .main { padding: 28px 32px 32px; overflow-y: auto; }
-    .view-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .view-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
     .view-head h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; margin: 0 0 4px; }
     .view-head p { margin: 0; color: var(--muted); font-size: 13.5px; }
 
-    .btn-group { display: flex; gap: 8px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .btn-primary {
       display: inline-flex; align-items: center; gap: 7px;
       background: var(--orange); color: #23140A; border: none;
-      padding: 10px 16px; border-radius: 10px; font-family: inherit;
-      font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      padding: 9px 15px; border-radius: 10px; font-family: inherit;
+      font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: all 0.15s;
     }
     .btn-primary:hover { background: var(--orange-deep); color: #fff; }
     .btn-primary.secondary { background: #E4DFD3; color: #1B2420; }
     .btn-primary.secondary:hover { background: #D0C9B8; }
+    .btn-primary.outline { background: transparent; border: 1px solid var(--border); color: var(--ink); }
+    .btn-primary.outline:hover { background: #EAE5D9; }
     .btn-primary.full { width: 100%; justify-content: center; margin-top: 8px; }
 
     .icon-btn {
@@ -130,12 +140,13 @@
     .radio-pill input { display: none; }
 
     .modal-veil {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center; z-index: 100;
     }
     .modal {
-      background: var(--surface); border-radius: 14px; width: 100%; max-width: 480px;
-      padding: 20px 24px; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      background: var(--surface); border-radius: 14px; width: 100%; max-width: 500px;
+      padding: 22px 24px; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      max-height: 90vh; overflow-y: auto;
     }
     .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
@@ -157,20 +168,39 @@
     .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
-    .date-rail { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    /* Estilos do Mês Inteiro da Agenda */
+    .agenda-month-picker {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+      background: var(--surface); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
+      width: fit-content;
+    }
+    .agenda-month-picker label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+    .agenda-month-picker input {
+      border: 1px solid var(--border); padding: 5px 8px; border-radius: 6px; font-family: inherit; font-size: 13px;
+    }
+    .date-rail-wrapper {
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .date-rail { display: flex; gap: 6px; flex-wrap: nowrap; min-width: max-content; }
     .date-chip {
       border: 1px solid var(--border); background: var(--surface); color: var(--ink);
-      padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; font-weight: 500;
+      padding: 6px 12px; border-radius: 20px; font-size: 12.5px; cursor: pointer; font-weight: 500;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
+    .date-chip .day-week { font-size: 10px; text-transform: uppercase; color: var(--muted); }
     .date-chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .date-chip.active .day-week { color: #D8E6DE; }
+    .date-chip.has-booking { border-bottom: 3px solid var(--orange); }
 
     .agenda-list { display: flex; flex-direction: column; gap: 10px; }
     .agenda-row {
       display: flex; align-items: center; gap: 12px; background: var(--surface);
       border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
     }
-    .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); width: 180px; flex-shrink: 0; }
-    .agenda-time input { padding: 2px 4px; font-size: 12.5px; }
+    .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); width: 175px; flex-shrink: 0; }
+    .agenda-time input { padding: 2px 4px; font-size: 12px; }
     .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
 
     .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -183,12 +213,39 @@
     .stat-value.up { color: var(--up); }
     .stat-value.down { color: var(--down); }
 
+    /* Painel do Gráfico Financeiro */
+    .financial-chart-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .financial-status-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
+    }
+    .financial-status-tag.positive { background: #E3F8EC; color: var(--up); border: 1px solid #B8ECCB; }
+    .financial-status-tag.negative { background: #FDEEEC; color: var(--down); border: 1px solid #F5C6C1; }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 20px;
+      background: #EFEAE0;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      margin: 12px 0 8px;
+    }
+    .progress-bar-fill.in { background: var(--up); height: 100%; transition: width 0.3s ease; }
+    .progress-bar-fill.out { background: var(--down); height: 100%; transition: width 0.3s ease; }
+
     .tx-panel {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
       padding: 18px; margin-bottom: 20px;
     }
-    .chart-panel-head { margin-bottom: 14px; }
-    .chart-panel-head h3 { margin: 0 0 2px; font-family: 'Fraunces', serif; font-size: 18px; }
+    .chart-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .chart-panel-head h3 { margin: 0; font-family: 'Fraunces', serif; font-size: 18px; }
 
     .tx-list { display: flex; flex-direction: column; gap: 8px; }
     .tx-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -208,7 +265,35 @@
 <script type="text/babel">
   const { useState, useEffect, useMemo, useRef } = React;
 
-  const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  // Utilitários de Formatação Monetária Brasileira (R$ 2.250,57)
+  const formatBRL = (val) => {
+    return Number(val || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  // Transforma digitação contínua (ex: 225057) em "R$ 2.250,57"
+  const maskMoneyInput = (rawString) => {
+    const digits = String(rawString || "").replace(/\D/g, "");
+    if (!digits) return "";
+    const amount = Number(digits) / 100;
+    return amount.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2
+    });
+  };
+
+  const parseMoneyToFloat = (maskedValue) => {
+    if (typeof maskedValue === "number") return maskedValue;
+    const digits = String(maskedValue || "").replace(/\D/g, "");
+    if (!digits) return 0;
+    return parseFloat((Number(digits) / 100).toFixed(2));
+  };
+
   function uid(p) { return p + Math.random().toString(36).slice(2, 7); }
 
   function Modal({ title, onClose, children }) {
@@ -225,11 +310,29 @@
     );
   }
 
+  // --- COMPONENTE AGENDA ---
   function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
-    const [activeDate, setActiveDate] = useState("2026-09-01");
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7)); // Formato "AAAA-MM"
+    const [activeDate, setActiveDate] = useState(todayStr);
     const [showForm, setShowForm] = useState(false);
     const [isCustom, setIsCustom] = useState(false);
-    const [draft, setDraft] = useState({ clientName: "", date: "2026-09-01", start: "09:00", end: "10:00", room: "", notes: "" });
+    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", notes: "" });
+
+    // Gera todos os dias do mês selecionado
+    const daysInMonth = useMemo(() => {
+      const [year, month] = currentMonth.split("-").map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      const list = [];
+      for (let d = 1; d <= lastDay; d++) {
+        const dd = String(d).padStart(2, "0");
+        const fullDate = `${year}-${String(month).padStart(2, "0")}-${dd}`;
+        const dateObj = new Date(year, month - 1, d);
+        const weekDay = dateObj.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+        list.push({ date: fullDate, day: dd, weekDay });
+      }
+      return list;
+    }, [currentMonth]);
 
     const dayBookings = bookings.filter((b) => b.date === activeDate);
 
@@ -241,25 +344,105 @@
       setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
     };
 
+    // Exportação da Agenda para XLS
+    const exportAgendaXLS = () => {
+      const data = bookings.map((b) => ({
+        "Data": b.date.split("-").reverse().join("/"),
+        "Horário Inicial": b.start || "",
+        "Horário Final": b.end || "",
+        "Cliente": b.clientName || "",
+        "Espaço/Sala": b.room || "",
+        "Observações": b.notes || ""
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Agenda");
+      XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
+    };
+
+    // Exportação da Agenda para PDF
+    const exportAgendaPDF = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Mês de referência: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+
+      const tableData = bookings
+        .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
+        .map((b) => [
+          b.date.split("-").reverse().join("/"),
+          `${b.start || ""} - ${b.end || ""}`,
+          b.clientName || "",
+          b.room || "",
+          b.notes || ""
+        ]);
+
+      doc.autoTable({
+        head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Observações"]],
+        body: tableData,
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 110, 86] },
+        styles: { fontSize: 9, font: 'helvetica' }
+      });
+
+      doc.save(`Agenda_Nellus_${currentMonth}.pdf`);
+    };
+
     return (
       <div className="view">
         <div className="view-head">
           <div>
             <h2>Agenda</h2>
-            <p>Reservas e horários salvos no Google Workspace.</p>
+            <p>Reservas e horários salvos em tempo real.</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
+          <div className="btn-group">
+            <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
+            <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
+          </div>
         </div>
 
-        <div className="date-rail">
-          {["2026-09-01", "2026-09-02", "2026-09-03"].map((d) => (
-            <button key={d} className={"date-chip" + (d === activeDate ? " active" : "")} onClick={() => setActiveDate(d)}>
-              {d.split('-').reverse().join('/')}
-            </button>
-          ))}
+        {/* Seletor de Mês Inteiro */}
+        <div className="agenda-month-picker">
+          <label>Mês:</label>
+          <input
+            type="month"
+            value={currentMonth}
+            onChange={(e) => {
+              setCurrentMonth(e.target.value);
+              setActiveDate(`${e.target.value}-01`);
+            }}
+          />
+        </div>
+
+        {/* Régua com TODOS os dias do mês */}
+        <div className="date-rail-wrapper">
+          <div className="date-rail">
+            {daysInMonth.map((d) => {
+              const hasBooking = bookings.some((b) => b.date === d.date);
+              return (
+                <button
+                  key={d.date}
+                  className={`date-chip ${d.date === activeDate ? "active" : ""} ${hasBooking ? "has-booking" : ""}`}
+                  onClick={() => setActiveDate(d.date)}
+                >
+                  <span className="day-week">{d.weekDay}</span>
+                  <strong>{d.day}</strong>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="agenda-list">
+          <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--teal-deep)", marginBottom: "4px" }}>
+            Agendamentos para {activeDate.split("-").reverse().join("/")}:
+          </div>
           {dayBookings.length === 0 && <div className="empty-state">Nenhum agendamento para este dia.</div>}
           {dayBookings.map((b) => (
             <div className="agenda-row" key={b.id}>
@@ -279,13 +462,13 @@
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input 
                     className="inline-input muted" 
-                    placeholder="Espaço/Sala..."
+                    placeholder="Espaço/Sala..." 
                     value={b.room || ""} 
                     onChange={(e) => onUpdate({ ...b, room: e.target.value })} 
                   />
                   <input 
                     className="inline-input muted" 
-                    placeholder="Observações..."
+                    placeholder="Observações..." 
                     value={b.notes || ""} 
                     onChange={(e) => onUpdate({ ...b, notes: e.target.value })} 
                   />
@@ -308,7 +491,7 @@
                   }}>
                     <option value="">Selecione um cliente...</option>
                     {clients.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    <option value="NEW">+ Inserir cliente avulso / não cadastrado</option>
+                    <option value="NEW">+ Inserir cliente avulso</option>
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: "6px" }}>
@@ -324,7 +507,7 @@
                 <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
               </div>
 
-              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Estação 4, Sala de Reunião" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} /></div>
+              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Sala de Reunião, Estação 3" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} /></div>
               <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
 
               <button className="btn-primary full" type="submit">Salvar Agendamento</button>
@@ -335,6 +518,7 @@
     );
   }
 
+  // --- COMPONENTE CLIENTES ---
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
@@ -351,13 +535,13 @@
         <div className="view-head">
           <div>
             <h2>Clientes</h2>
-            <p>Gerenciamento de contratos centralizado na planilha.</p>
+            <p>Gerenciamento de contratos em tempo real.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
 
         <div className="type-settings-bar">
-          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Nomes dos Planos:</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Planos e Categorias:</span>
           <div className="type-input-group">
             <span style={{ color: "#E08A52" }}>●</span>
             <input value={typeLabels.presencial} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
@@ -381,19 +565,19 @@
                     className="inline-input" 
                     style={{ fontWeight: "bold", fontSize: "14px" }} 
                     value={c.name || ""} 
-                    placeholder="Nome do cliente"
+                    placeholder="Nome do cliente" 
                     onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
                   />
                   <input 
                     className="inline-input muted" 
                     value={c.document || ""} 
-                    placeholder="CPF / CNPJ"
+                    placeholder="CPF / CNPJ" 
                     onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
                   />
                 </div>
                 <select 
-                  className="inline-select"
-                  value={c.type || "presencial"}
+                  className="inline-select" 
+                  value={c.type || "presencial"} 
                   onChange={(e) => onUpdate({ ...c, type: e.target.value })}
                 >
                   <option value="presencial">{typeLabels.presencial}</option>
@@ -407,7 +591,7 @@
                 <input 
                   className="inline-input" 
                   value={c.address || ""} 
-                  placeholder="Endereço"
+                  placeholder="Endereço" 
                   onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
                 />
               </div>
@@ -417,7 +601,7 @@
                 <input 
                   className="inline-input" 
                   value={c.phone || ""} 
-                  placeholder="Telefone"
+                  placeholder="Telefone" 
                   onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
                 />
               </div>
@@ -427,7 +611,7 @@
                 <input 
                   className="inline-input" 
                   value={c.email || ""} 
-                  placeholder="E-mail"
+                  placeholder="E-mail" 
                   onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
                 />
               </div>
@@ -469,7 +653,6 @@
                 <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} /></div>
                 <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} /></div>
               </div>
-
               <button className="btn-primary full" type="submit">Cadastrar Cliente</button>
             </form>
           </Modal>
@@ -478,23 +661,98 @@
     );
   }
 
+  // --- COMPONENTE FINANCEIRO COM GRÁFICO, MÁSCARA E EXPORTAÇÕES ---
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
-    const [draft, setDraft] = useState({ type: "entrada", desc: "", amount: "", date: "2026-09-01", category: "" });
+    const [draft, setDraft] = useState({ 
+      type: "entrada", 
+      desc: "", 
+      maskedAmount: "", 
+      date: new Date().toISOString().slice(0, 10), 
+      category: "" 
+    });
 
     const totals = useMemo(() => {
       const entradas = tx.filter((t) => t.type === "entrada").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
       const saidas = tx.filter((t) => t.type === "saida").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
-      return { entradas, saidas, saldo: entradas - saidas };
+      const saldo = entradas - saidas;
+      const totalVolume = entradas + saidas;
+      const percentEntradas = totalVolume > 0 ? (entradas / totalVolume) * 100 : 50;
+      const percentSaidas = totalVolume > 0 ? (saidas / totalVolume) * 100 : 50;
+      return { entradas, saidas, saldo, percentEntradas, percentSaidas, isPositivo: saldo >= 0 };
     }, [tx]);
 
     const submit = (e) => {
       e.preventDefault();
-      const amount = parseFloat(draft.amount);
-      if (!draft.desc || isNaN(amount)) return;
-      onAdd({ ...draft, amount, id: uid("t") });
+      const amount = parseMoneyToFloat(draft.maskedAmount);
+      if (!draft.desc || isNaN(amount) || amount <= 0) return;
+      onAdd({ 
+        type: draft.type, 
+        desc: draft.desc, 
+        amount: amount, 
+        date: draft.date, 
+        category: draft.category, 
+        id: uid("t") 
+      });
       setShowForm(false);
-      setDraft({ type: "entrada", desc: "", amount: "", date: draft.date, category: "" });
+      setDraft({ type: "entrada", desc: "", maskedAmount: "", date: draft.date, category: "" });
+    };
+
+    // Exportar Financeiro para XLS
+    const exportFinanceiroXLS = () => {
+      const data = tx.map((t) => ({
+        "Data": t.date ? t.date.split("-").reverse().join("/") : "",
+        "Descrição": t.desc || "",
+        "Categoria": t.category || "",
+        "Tipo": t.type === "entrada" ? "Receita (+)" : "Despesa (-)",
+        "Valor (R$)": parseFloat(t.amount || 0)
+      }));
+
+      // Adiciona linha de totais
+      data.push({});
+      data.push({ "Descrição": "Total de Entradas", "Valor (R$)": totals.entradas });
+      data.push({ "Descrição": "Total de Saídas", "Valor (R$)": totals.saidas });
+      data.push({ "Descrição": "Saldo Acumulado", "Valor (R$)": totals.saldo });
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Financeiro");
+      XLSX.writeFile(wb, `Financeiro_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    };
+
+    // Exportar Financeiro para PDF
+    const exportFinanceiroPDF = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Nellus Coworking - Relatório Financeiro", 14, 18);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Data de Emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      doc.text(`Resumo: Entradas ${formatBRL(totals.entradas)} | Saídas ${formatBRL(totals.saidas)} | Saldo: ${formatBRL(totals.saldo)} (${totals.isPositivo ? "POSITIVO" : "NEGATIVO"})`, 14, 31);
+
+      const tableData = tx
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+        .map((t) => [
+          t.date ? t.date.split("-").reverse().join("/") : "",
+          t.desc || "",
+          t.category || "",
+          t.type === "entrada" ? "Entrada (+)" : "Saída (-)",
+          formatBRL(t.amount)
+        ]);
+
+      doc.autoTable({
+        head: [["Data", "Descrição", "Categoria", "Tipo", "Valor"]],
+        body: tableData,
+        startY: 36,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 110, 86] },
+        styles: { fontSize: 9, font: 'helvetica' }
+      });
+
+      doc.save(`Financeiro_Nellus_${new Date().toISOString().slice(0, 10)}.pdf`);
     };
 
     return (
@@ -502,29 +760,67 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Controle financeiro integrado.</p>
+            <p>Controle financeiro em tempo real.</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
+          <div className="btn-group">
+            <button className="btn-primary outline" onClick={exportFinanceiroXLS}>📥 XLS</button>
+            <button className="btn-primary outline" onClick={exportFinanceiroPDF}>📄 PDF</button>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
+          </div>
         </div>
 
+        {/* Cards de Métricas */}
         <div className="stat-row">
           <div className="stat-card">
             <span className="stat-label">Entradas</span>
-            <strong className="stat-value up">{money(totals.entradas)}</strong>
+            <strong className="stat-value up">{formatBRL(totals.entradas)}</strong>
           </div>
           <div className="stat-card">
             <span className="stat-label">Saídas</span>
-            <strong className="stat-value down">{money(totals.saidas)}</strong>
+            <strong className="stat-value down">{formatBRL(totals.saidas)}</strong>
           </div>
           <div className="stat-card">
             <span className="stat-label">Saldo Acumulado</span>
-            <strong className={"stat-value " + (totals.saldo >= 0 ? "up" : "down")}>{money(totals.saldo)}</strong>
+            <strong className={"stat-value " + (totals.isPositivo ? "up" : "down")}>{formatBRL(totals.saldo)}</strong>
           </div>
         </div>
 
+        {/* Gráfico Visual: Balanço Positivo / Negativo */}
+        <div className="financial-chart-panel">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", fontWeight: "bold" }}>Saúde Financeira</span>
+              <h3 style={{ margin: "2px 0 0", fontFamily: "'Fraunces', serif" }}>Distribuição e Resultado</h3>
+            </div>
+            <span className={`financial-status-tag ${totals.isPositivo ? "positive" : "negative"}`}>
+              {totals.isPositivo ? "● SALDO POSITIVO (LUCRO)" : "● SALDO NEGATIVO (DÉFICIT)"}
+            </span>
+          </div>
+
+          <div className="progress-bar-container" title={`Entradas: ${totals.percentEntradas.toFixed(1)}% | Saídas: ${totals.percentSaidas.toFixed(1)}%`}>
+            <div className="progress-bar-fill in" style={{ width: `${totals.percentEntradas}%` }} />
+            <div className="progress-bar-fill out" style={{ width: `${totals.percentSaidas}%` }} />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--muted)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--up)" }}></span>
+              Entradas: {totals.percentEntradas.toFixed(1)}%
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--down)" }}></span>
+              Saídas: {totals.percentSaidas.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Tabela de Lançamentos */}
         <div className="tx-panel">
-          <div className="chart-panel-head"><h3>Lançamentos</h3></div>
+          <div className="chart-panel-head">
+            <h3>Lançamentos</h3>
+          </div>
           <div className="tx-list">
+            {tx.length === 0 && <div className="empty-state">Nenhum lançamento registrado.</div>}
             {tx.map((t) => (
               <div className="tx-row" key={t.id}>
                 <div className="tx-main">
@@ -537,7 +833,7 @@
                   <div className="tx-sub">
                     <input 
                       className="inline-input muted" 
-                      placeholder="Categoria"
+                      placeholder="Categoria" 
                       value={t.category || ""} 
                       onChange={(e) => onUpdate({ ...t, category: e.target.value })} 
                     />
@@ -552,23 +848,25 @@
                 </div>
 
                 <select 
-                  className="inline-select"
-                  value={t.type || "entrada"}
+                  className="inline-select" 
+                  value={t.type || "entrada"} 
                   onChange={(e) => onUpdate({ ...t, type: e.target.value })}
                 >
                   <option value="entrada">Entrada (+)</option>
                   <option value="saida">Saída (-)</option>
                 </select>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "2px", width: "110px" }}>
-                  <span className="muted">R$</span>
+                {/* Edição em linha do valor com máscara */}
+                <div style={{ width: "130px", textAlign: "right" }}>
                   <input 
-                    type="number"
-                    step="0.01"
+                    type="text"
                     className={"inline-input " + (t.type === "entrada" ? "up" : "down")}
                     style={{ fontWeight: "bold", textAlign: "right" }}
-                    value={t.amount || 0} 
-                    onChange={(e) => onUpdate({ ...t, amount: parseFloat(e.target.value) || 0 })} 
+                    value={formatBRL(t.amount)} 
+                    onChange={(e) => {
+                      const num = parseMoneyToFloat(e.target.value);
+                      onUpdate({ ...t, amount: num });
+                    }} 
                   />
                 </div>
 
@@ -578,6 +876,7 @@
           </div>
         </div>
 
+        {/* Modal de Cadastro de Lançamento com Máscara R$ 2.250,57 */}
         {showForm && (
           <Modal title="Novo lançamento" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
@@ -589,12 +888,30 @@
                   <input type="radio" checked={draft.type === "saida"} onChange={() => setDraft({ ...draft, type: "saida" })} /> Saída
                 </label>
               </div>
-              <div className="field"><label>Descrição</label><input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required /></div>
-              <div className="form-row">
-                <div className="field"><label>Valor (R$)</label><input type="number" step="0.01" value={draft.amount} onChange={(e) => setDraft({ ...draft, amount: e.target.value })} required /></div>
-                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+              <div className="field">
+                <label>Descrição</label>
+                <input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required />
               </div>
-              <div className="field"><label>Categoria</label><input value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} /></div>
+              <div className="form-row">
+                <div className="field">
+                  <label>Valor (R$)</label>
+                  <input 
+                    type="text" 
+                    placeholder="R$ 0,00"
+                    value={draft.maskedAmount} 
+                    onChange={(e) => setDraft({ ...draft, maskedAmount: maskMoneyInput(e.target.value) })} 
+                    required 
+                  />
+                </div>
+                <div className="field">
+                  <label>Data</label>
+                  <input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
+                </div>
+              </div>
+              <div className="field">
+                <label>Categoria</label>
+                <input value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} placeholder="Ex.: Mensalidade, Internet, Manutenção" />
+              </div>
               <button className="btn-primary full" type="submit">Salvar Lançamento</button>
             </form>
           </Modal>
@@ -603,9 +920,10 @@
     );
   }
 
+  // --- COMPONENTE PRINCIPAL DO APP ---
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
-    const [statusMsg, setStatusMsg] = useState("🟢 Sincronizado (Workspace)");
+    const [statusMsg, setStatusMsg] = useState("🟢 Sincronizado (Tempo Real)");
     const [clients, setClients] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [tx, setTx] = useState([]);
@@ -615,39 +933,56 @@
       virtual: "Escritório virtual"
     });
 
-    // Função de sincronização com o Google Apps Script
+    // Função de sincronização com o Google Apps Script (Google Sheets no Drive)
     const salvarNoSheets = (chave, dados) => {
-      setStatusMsg("⏳ Salvando no Drive...");
+      setStatusMsg("⏳ Salvando...");
       if (window.google && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado (Workspace)"))
+          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado (Tempo Real)"))
           .withFailureHandler(() => setStatusMsg("⚠️ Erro ao salvar"))
           .salvarDados(chave, JSON.stringify(dados));
+      } else {
+        // Fallback local se estiver executando fora do Apps Script
+        localStorage.setItem(`nellus_${chave}`, JSON.stringify(dados));
+        setTimeout(() => setStatusMsg("🟢 Sincronizado (Local)"), 300);
       }
     };
 
-    // Carrega dados iniciais da Planilha
+    // Carrega dados e sincroniza em tempo real
     const carregar = () => {
       if (window.google && google.script && google.script.run) {
         google.script.run.withSuccessHandler((res) => {
           if (!res) return;
-          const data = JSON.parse(res);
-          if (data.clients) setClients(data.clients);
-          if (data.bookings) setBookings(data.bookings);
-          if (data.tx) setTx(data.tx);
-          if (data.typeLabels) setTypeLabels(data.typeLabels);
+          try {
+            const data = typeof res === "string" ? JSON.parse(res) : res;
+            if (data.clients) setClients(data.clients);
+            if (data.bookings) setBookings(data.bookings);
+            if (data.tx) setTx(data.tx);
+            if (data.typeLabels) setTypeLabels(data.typeLabels);
+          } catch(e) {}
         }).carregarDados();
+      } else {
+        try {
+          const c = localStorage.getItem("nellus_clients");
+          const b = localStorage.getItem("nellus_bookings");
+          const t = localStorage.getItem("nellus_tx");
+          const l = localStorage.getItem("nellus_typeLabels");
+          if (c) setClients(JSON.parse(c));
+          if (b) setBookings(JSON.parse(b));
+          if (t) setTx(JSON.parse(t));
+          if (l) setTypeLabels(JSON.parse(l));
+        } catch (e) {}
       }
     };
 
     useEffect(() => {
       carregar();
-      // Atualiza automaticamente a cada 15 segundos para pegar novidades de outros usuários
-      const interval = setInterval(carregar, 15000);
+      // Polling a cada 5 segundos para refletir alterações de outros usuários em tempo real
+      const interval = setInterval(carregar, 5000);
       return () => clearInterval(interval);
     }, []);
 
-    // Handlers
+    // Handlers Clientes
     const handleAddClient = (novo) => {
       const lista = [...clients, novo];
       setClients(lista);
@@ -664,6 +999,7 @@
       salvarNoSheets("clients", lista);
     };
 
+    // Handlers Agenda
     const handleAddBooking = (novo) => {
       const lista = [...bookings, novo];
       setBookings(lista);
@@ -680,6 +1016,7 @@
       salvarNoSheets("bookings", lista);
     };
 
+    // Handlers Financeiro
     const handleAddTx = (novo) => {
       const lista = [...tx, novo];
       setTx(lista);
@@ -724,7 +1061,7 @@
           </nav>
           <div className="sidebar-foot">
             <b>Google Workspace</b><br />
-            Dados guardados de forma segura na planilha do seu Google Drive.
+            Dados sincronizados em tempo real para múltiplos usuários pelo link.
           </div>
         </aside>
 
