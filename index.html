@@ -2,19 +2,16 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nellus Coworking - Gestão Integrada</title>
-  
-  <!-- Ícones do Aplicativo / Favicon -->
-  <link rel="icon" type="image/png" sizes="180x180" href="apple_touch_icon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple_touch_icon.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="app_icon_512.png">
-  
   <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Recharts -->
+  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
@@ -59,11 +56,7 @@
       display: flex;
       flex-direction: column;
     }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px 28px; }
-    .brand-icon {
-      width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 28px; }
     .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
     .brand-text b { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; letter-spacing: 0.2px; }
     .brand-text span { font-size: 11.5px; color: #B9CFC5; letter-spacing: 0.3px; }
@@ -151,7 +144,9 @@
       font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
       background: #F0EFEA; color: var(--ink);
     }
+    .type-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, #8A8578); }
 
+    /* Cards & Grids */
     .type-settings-bar {
       display: flex; gap: 12px; margin-bottom: 18px; padding: 12px;
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -159,6 +154,15 @@
     }
     .type-input-group { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
     .type-input-group input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
+
+    .segment-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+    .segment-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 16px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+    }
+    .segment-card.active { border-color: var(--teal); background: #F0F7F4; }
+    .segment-count { font-size: 20px; font-weight: 700; color: var(--ink); }
+    .segment-label { font-size: 12px; color: var(--muted); font-weight: 600; }
 
     .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
     .client-card {
@@ -196,10 +200,13 @@
     .stat-value.up { color: var(--up); }
     .stat-value.down { color: var(--down); }
 
-    .tx-panel {
+    .chart-panel, .tx-panel {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
       padding: 18px; margin-bottom: 20px;
     }
+    .chart-panel-head { margin-bottom: 14px; }
+    .chart-panel-head h3 { margin: 0 0 2px; font-family: 'Fraunces', serif; font-size: 18px; }
+
     .tx-list { display: flex; flex-direction: column; gap: 8px; }
     .tx-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .tx-row:last-child { border-bottom: none; }
@@ -219,6 +226,7 @@
 <script type="text/babel">
   const { useState, useMemo } = React;
 
+  // Seed Data Initial
   const initialClients = [
     { id: "c1", name: "Marina Albuquerque", document: "184.223.660-05", address: "Rua das Acácias, 220 — Volta Redonda/RJ", type: "presencial", phone: "(24) 99811-2234", email: "marina.alb@gmail.com", since: "2026-02-10" },
     { id: "c2", name: "Estúdio Cravo Design", document: "41.882.203/0001-90", address: "Av. Beira Rio, 88 — VR/RJ", type: "salaFixa", phone: "(24) 99722-0091", email: "contato@cravodesign.com", since: "2025-11-02" },
@@ -256,6 +264,7 @@
     );
   }
 
+  // AGENDA COMPONENT
   function Agenda({ bookings, clients, onAdd, onRemove }) {
     const [activeDate, setActiveDate] = useState("2026-09-01");
     const [showForm, setShowForm] = useState(false);
@@ -343,6 +352,7 @@
     );
   }
 
+  // CLIENTES COMPONENT
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
@@ -364,6 +374,7 @@
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
 
+        {/* Nomes Editáveis dos Tipos de Plano */}
         <div className="type-settings-bar">
           <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Nomes dos Planos:</span>
           <div className="type-input-group">
@@ -388,7 +399,7 @@
                   <strong>{c.name || "Sem Nome"}</strong>
                   <div className="muted">{c.document || "Doc. não informado"}</div>
                 </div>
-                <span className="type-badge">{typeLabels[c.type] || c.type}</span>
+                <span className="type-badge"><i></i>{typeLabels[c.type] || c.type}</span>
               </div>
               {c.address && <div className="client-line">📍 {c.address}</div>}
               {c.phone && <div className="client-line">📞 {c.phone}</div>}
@@ -402,7 +413,7 @@
         </div>
 
         {showForm && (
-          <Modal title="Novo cliente" onClose={() => setShowForm(false)}>
+          <Modal title="Novo cliente (Ficha Sem Obrigatoriedade)" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
               <div className="field"><label>Nome / Razão social</label><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Opcional" /></div>
               <div className="field"><label>CPF / CNPJ</label><input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} placeholder="Opcional" /></div>
@@ -431,6 +442,7 @@
     );
   }
 
+  // FINANCEIRO COMPONENT
   function Financeiro({ tx, onAdd, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ type: "entrada", desc: "", amount: "", date: "2026-09-01", category: "" });
@@ -480,6 +492,7 @@
         </div>
 
         <div className="tx-panel">
+          <div className="chart-panel-head"><h3>Lançamentos</h3></div>
           <div className="tx-list">
             {tx.map((t) => (
               <div className="tx-row" key={t.id}>
@@ -521,6 +534,7 @@
     );
   }
 
+  // APP MAIN SHELL
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
     const [clients, setClients] = useState(initialClients);
@@ -536,7 +550,6 @@
       <div className="nellus-app">
         <div className="sidebar">
           <div className="brand">
-            <img src="apple_touch_icon.png" className="brand-icon" alt="Logo Nellus" />
             <div className="brand-text">
               <b>Nellus</b>
               <span>Coworking Management</span>
