@@ -3,15 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Nellus Coworking - Gestão</title>
-  <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase SDK (Compat v9) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
@@ -35,7 +29,6 @@
       --orange-deep: #C96B34;
       --up: #1F9D6C;
       --down: #C1483B;
-      font-family: 'Manrope', system-ui, sans-serif;
       color: var(--ink);
       background: var(--paper);
       display: grid;
@@ -89,7 +82,6 @@
       background: var(--orange); color: #23140A; border: none;
       padding: 10px 16px; border-radius: 10px; font-family: inherit;
       font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
-      text-decoration: none;
     }
     .btn-primary:hover { background: var(--orange-deep); color: #fff; }
     .btn-primary.secondary { background: #E4DFD3; color: #1B2420; }
@@ -214,29 +206,10 @@
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useMemo } = React;
-
-  // -------------------------------------------------------------
-  // CONFIGURAÇÃO DO FIREBASE (Substitua pelos dados do seu Console)
-  // -------------------------------------------------------------
-  const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "seu-projeto.firebaseapp.com",
-    projectId: "seu-projeto",
-    storageBucket: "seu-projeto.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcdef123456"
-  };
-
-  // Inicializa o Firebase se tiver sido configurado
-  const isFirebaseActive = firebaseConfig.apiKey !== "SUA_API_KEY_AQUI";
-  let db = null;
-  if (isFirebaseActive) {
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-  }
+  const { useState, useEffect, useMemo, useRef } = React;
 
   const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  function uid(p) { return p + Math.random().toString(36).slice(2, 7); }
 
   function Modal({ title, onClose, children }) {
     return (
@@ -252,7 +225,6 @@
     );
   }
 
-  // AGENDA COMPONENT
   function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
     const [activeDate, setActiveDate] = useState("2026-09-01");
     const [showForm, setShowForm] = useState(false);
@@ -264,7 +236,7 @@
     const submit = (e) => {
       e.preventDefault();
       if (!draft.clientName || !draft.room) return;
-      onAdd({ ...draft });
+      onAdd({ ...draft, id: uid("b") });
       setShowForm(false);
       setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
     };
@@ -274,7 +246,7 @@
         <div className="view-head">
           <div>
             <h2>Agenda</h2>
-            <p>Reservas de estações, salas e horários sincronizados em nuvem.</p>
+            <p>Reservas e horários salvos no Google Workspace.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
         </div>
@@ -293,29 +265,29 @@
             <div className="agenda-row" key={b.id}>
               <div className="agenda-time">
                 <span>⏱</span>
-                <input type="time" className="inline-input" value={b.start || ""} onChange={(e) => onUpdate(b.id, { start: e.target.value })} />
+                <input type="time" className="inline-input" value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
                 <span>–</span>
-                <input type="time" className="inline-input" value={b.end || ""} onChange={(e) => onUpdate(b.id, { end: e.target.value })} />
+                <input type="time" className="inline-input" value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
               </div>
               <div className="agenda-main">
                 <input 
                   className="inline-input" 
                   style={{ fontWeight: "bold" }} 
                   value={b.clientName || ""} 
-                  onChange={(e) => onUpdate(b.id, { clientName: e.target.value })} 
+                  onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} 
                 />
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input 
                     className="inline-input muted" 
                     placeholder="Espaço/Sala..."
                     value={b.room || ""} 
-                    onChange={(e) => onUpdate(b.id, { room: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...b, room: e.target.value })} 
                   />
                   <input 
                     className="inline-input muted" 
                     placeholder="Observações..."
                     value={b.notes || ""} 
-                    onChange={(e) => onUpdate(b.id, { notes: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...b, notes: e.target.value })} 
                   />
                 </div>
               </div>
@@ -340,7 +312,7 @@
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: "6px" }}>
-                    <input placeholder="Digite o nome do cliente avulso..." value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} style={{ flex: 1 }} />
+                    <input placeholder="Nome do cliente avulso..." value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} style={{ flex: 1 }} />
                     <button type="button" className="btn-primary secondary" onClick={() => setIsCustom(false)}>Lista</button>
                   </div>
                 )}
@@ -363,14 +335,13 @@
     );
   }
 
-  // CLIENTES COMPONENT
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
 
     const submit = (e) => {
       e.preventDefault();
-      onAdd({ ...draft, since: new Date().toISOString().slice(0, 10) });
+      onAdd({ ...draft, id: uid("c"), since: new Date().toISOString().slice(0, 10) });
       setShowForm(false);
       setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
     };
@@ -380,7 +351,7 @@
         <div className="view-head">
           <div>
             <h2>Clientes</h2>
-            <p>Gerenciamento de contratos e cadastros em tempo real.</p>
+            <p>Gerenciamento de contratos centralizado na planilha.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
@@ -411,19 +382,19 @@
                     style={{ fontWeight: "bold", fontSize: "14px" }} 
                     value={c.name || ""} 
                     placeholder="Nome do cliente"
-                    onChange={(e) => onUpdate(c.id, { name: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
                   />
                   <input 
                     className="inline-input muted" 
                     value={c.document || ""} 
                     placeholder="CPF / CNPJ"
-                    onChange={(e) => onUpdate(c.id, { document: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
                   />
                 </div>
                 <select 
                   className="inline-select"
                   value={c.type || "presencial"}
-                  onChange={(e) => onUpdate(c.id, { type: e.target.value })}
+                  onChange={(e) => onUpdate({ ...c, type: e.target.value })}
                 >
                   <option value="presencial">{typeLabels.presencial}</option>
                   <option value="salaFixa">{typeLabels.salaFixa}</option>
@@ -437,7 +408,7 @@
                   className="inline-input" 
                   value={c.address || ""} 
                   placeholder="Endereço"
-                  onChange={(e) => onUpdate(c.id, { address: e.target.value })} 
+                  onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
                 />
               </div>
 
@@ -447,7 +418,7 @@
                   className="inline-input" 
                   value={c.phone || ""} 
                   placeholder="Telefone"
-                  onChange={(e) => onUpdate(c.id, { phone: e.target.value })} 
+                  onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
                 />
               </div>
 
@@ -457,7 +428,7 @@
                   className="inline-input" 
                   value={c.email || ""} 
                   placeholder="E-mail"
-                  onChange={(e) => onUpdate(c.id, { email: e.target.value })} 
+                  onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
                 />
               </div>
 
@@ -468,7 +439,7 @@
                     type="date" 
                     className="inline-input muted" 
                     value={c.since || ""} 
-                    onChange={(e) => onUpdate(c.id, { since: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...c, since: e.target.value })} 
                   />
                 </div>
                 <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
@@ -507,7 +478,6 @@
     );
   }
 
-  // FINANCEIRO COMPONENT
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ type: "entrada", desc: "", amount: "", date: "2026-09-01", category: "" });
@@ -522,7 +492,7 @@
       e.preventDefault();
       const amount = parseFloat(draft.amount);
       if (!draft.desc || isNaN(amount)) return;
-      onAdd({ ...draft, amount });
+      onAdd({ ...draft, amount, id: uid("t") });
       setShowForm(false);
       setDraft({ type: "entrada", desc: "", amount: "", date: draft.date, category: "" });
     };
@@ -532,7 +502,7 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Controle unificado de entradas e saídas.</p>
+            <p>Controle financeiro integrado.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
         </div>
@@ -562,21 +532,21 @@
                     className="inline-input" 
                     style={{ fontWeight: "bold" }} 
                     value={t.desc || ""} 
-                    onChange={(e) => onUpdate(t.id, { desc: e.target.value })} 
+                    onChange={(e) => onUpdate({ ...t, desc: e.target.value })} 
                   />
                   <div className="tx-sub">
                     <input 
                       className="inline-input muted" 
                       placeholder="Categoria"
                       value={t.category || ""} 
-                      onChange={(e) => onUpdate(t.id, { category: e.target.value })} 
+                      onChange={(e) => onUpdate({ ...t, category: e.target.value })} 
                     />
                     <span className="muted">•</span>
                     <input 
-                      type="date"
+                      type="date" 
                       className="inline-input muted" 
                       value={t.date || ""} 
-                      onChange={(e) => onUpdate(t.id, { date: e.target.value })} 
+                      onChange={(e) => onUpdate({ ...t, date: e.target.value })} 
                     />
                   </div>
                 </div>
@@ -584,7 +554,7 @@
                 <select 
                   className="inline-select"
                   value={t.type || "entrada"}
-                  onChange={(e) => onUpdate(t.id, { type: e.target.value })}
+                  onChange={(e) => onUpdate({ ...t, type: e.target.value })}
                 >
                   <option value="entrada">Entrada (+)</option>
                   <option value="saida">Saída (-)</option>
@@ -598,7 +568,7 @@
                     className={"inline-input " + (t.type === "entrada" ? "up" : "down")}
                     style={{ fontWeight: "bold", textAlign: "right" }}
                     value={t.amount || 0} 
-                    onChange={(e) => onUpdate(t.id, { amount: parseFloat(e.target.value) || 0 })} 
+                    onChange={(e) => onUpdate({ ...t, amount: parseFloat(e.target.value) || 0 })} 
                   />
                 </div>
 
@@ -633,9 +603,9 @@
     );
   }
 
-  // APP PRINCIPAL COM SINCRONIZAÇÃO NUVEM
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
+    const [statusMsg, setStatusMsg] = useState("🟢 Sincronizado (Workspace)");
     const [clients, setClients] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [tx, setTx] = useState([]);
@@ -645,65 +615,90 @@
       virtual: "Escritório virtual"
     });
 
-    // Ouvintes em tempo real do Firestore
-    useEffect(() => {
-      if (!isFirebaseActive) {
-        // Modo offline de contingência usando localStorage
-        const savedClients = localStorage.getItem("nellus_clients");
-        if (savedClients) setClients(JSON.parse(savedClients));
-        return;
+    // Função de sincronização com o Google Apps Script
+    const salvarNoSheets = (chave, dados) => {
+      setStatusMsg("⏳ Salvando no Drive...");
+      if (window.google && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado (Workspace)"))
+          .withFailureHandler(() => setStatusMsg("⚠️ Erro ao salvar"))
+          .salvarDados(chave, JSON.stringify(dados));
       }
+    };
 
-      const unsubClients = db.collection("clients").onSnapshot((snapshot) => {
-        setClients(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      });
+    // Carrega dados iniciais da Planilha
+    const carregar = () => {
+      if (window.google && google.script && google.script.run) {
+        google.script.run.withSuccessHandler((res) => {
+          if (!res) return;
+          const data = JSON.parse(res);
+          if (data.clients) setClients(data.clients);
+          if (data.bookings) setBookings(data.bookings);
+          if (data.tx) setTx(data.tx);
+          if (data.typeLabels) setTypeLabels(data.typeLabels);
+        }).carregarDados();
+      }
+    };
 
-      const unsubBookings = db.collection("bookings").onSnapshot((snapshot) => {
-        setBookings(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      });
-
-      const unsubTx = db.collection("transactions").onSnapshot((snapshot) => {
-        setTx(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      });
-
-      const unsubConfig = db.collection("settings").doc("typeLabels").onSnapshot((doc) => {
-        if (doc.exists) setTypeLabels(doc.data());
-      });
-
-      return () => {
-        unsubClients();
-        unsubBookings();
-        unsubTx();
-        unsubConfig();
-      };
+    useEffect(() => {
+      carregar();
+      // Atualiza automaticamente a cada 15 segundos para pegar novidades de outros usuários
+      const interval = setInterval(carregar, 15000);
+      return () => clearInterval(interval);
     }, []);
 
-    // Operações em nuvem
-    const handleAdd = (collection, item) => {
-      if (isFirebaseActive) {
-        db.collection(collection).add(item);
-      } else {
-        alert("Para salvar para todos os usuários em tempo real, insira suas credenciais do Firebase no código!");
-      }
+    // Handlers
+    const handleAddClient = (novo) => {
+      const lista = [...clients, novo];
+      setClients(lista);
+      salvarNoSheets("clients", lista);
+    };
+    const handleUpdateClient = (item) => {
+      const lista = clients.map((c) => (c.id === item.id ? item : c));
+      setClients(lista);
+      salvarNoSheets("clients", lista);
+    };
+    const handleRemoveClient = (id) => {
+      const lista = clients.filter((c) => c.id !== id);
+      setClients(lista);
+      salvarNoSheets("clients", lista);
     };
 
-    const handleUpdate = (collection, id, data) => {
-      if (isFirebaseActive) {
-        db.collection(collection).doc(id).update(data);
-      }
+    const handleAddBooking = (novo) => {
+      const lista = [...bookings, novo];
+      setBookings(lista);
+      salvarNoSheets("bookings", lista);
+    };
+    const handleUpdateBooking = (item) => {
+      const lista = bookings.map((b) => (b.id === item.id ? item : b));
+      setBookings(lista);
+      salvarNoSheets("bookings", lista);
+    };
+    const handleRemoveBooking = (id) => {
+      const lista = bookings.filter((b) => b.id !== id);
+      setBookings(lista);
+      salvarNoSheets("bookings", lista);
     };
 
-    const handleRemove = (collection, id) => {
-      if (isFirebaseActive) {
-        db.collection(collection).doc(id).delete();
-      }
+    const handleAddTx = (novo) => {
+      const lista = [...tx, novo];
+      setTx(lista);
+      salvarNoSheets("tx", lista);
+    };
+    const handleUpdateTx = (item) => {
+      const lista = tx.map((t) => (t.id === item.id ? item : t));
+      setTx(lista);
+      salvarNoSheets("tx", lista);
+    };
+    const handleRemoveTx = (id) => {
+      const lista = tx.filter((t) => t.id !== id);
+      setTx(lista);
+      salvarNoSheets("tx", lista);
     };
 
-    const handleUpdateLabels = (newLabels) => {
-      setTypeLabels(newLabels);
-      if (isFirebaseActive) {
-        db.collection("settings").doc("typeLabels").set(newLabels, { merge: true });
-      }
+    const handleUpdateLabels = (labels) => {
+      setTypeLabels(labels);
+      salvarNoSheets("typeLabels", labels);
     };
 
     return (
@@ -713,9 +708,7 @@
             <div className="brand-text">
               <b>Nellus Coworking</b>
               <span>Gestão Centralizada</span>
-              <span className="sync-status">
-                {isFirebaseActive ? "🟢 Sincronizado na Nuvem" : "⚠️ Modo Local (Configure o Firebase)"}
-              </span>
+              <span className="sync-status">{statusMsg}</span>
             </div>
           </div>
           <nav className="nav">
@@ -730,8 +723,8 @@
             </button>
           </nav>
           <div className="sidebar-foot">
-            <b>Painel Compartilhado</b><br />
-            As alterações são salvas e refletidas instantaneamente para qualquer pessoa conectada.
+            <b>Google Workspace</b><br />
+            Dados guardados de forma segura na planilha do seu Google Drive.
           </div>
         </aside>
 
@@ -740,9 +733,9 @@
             <Agenda
               bookings={bookings}
               clients={clients}
-              onAdd={(data) => handleAdd("bookings", data)}
-              onUpdate={(id, data) => handleUpdate("bookings", id, data)}
-              onRemove={(id) => handleRemove("bookings", id)}
+              onAdd={handleAddBooking}
+              onUpdate={handleUpdateBooking}
+              onRemove={handleRemoveBooking}
             />
           )}
           {tab === "clientes" && (
@@ -750,17 +743,17 @@
               clients={clients}
               typeLabels={typeLabels}
               setTypeLabels={handleUpdateLabels}
-              onAdd={(data) => handleAdd("clients", data)}
-              onUpdate={(id, data) => handleUpdate("clients", id, data)}
-              onRemove={(id) => handleRemove("clients", id)}
+              onAdd={handleAddClient}
+              onUpdate={handleUpdateClient}
+              onRemove={handleRemoveClient}
             />
           )}
           {tab === "financeiro" && (
             <Financeiro
               tx={tx}
-              onAdd={(data) => handleAdd("transactions", data)}
-              onUpdate={(id, data) => handleUpdate("transactions", id, data)}
-              onRemove={(id) => handleRemove("transactions", id)}
+              onAdd={handleAddTx}
+              onUpdate={handleUpdateTx}
+              onRemove={handleRemoveTx}
             />
           )}
         </main>
