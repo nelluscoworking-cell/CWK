@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Firebase v8 (Tempo Real) -->
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -177,7 +177,6 @@
     .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
-    /* Mês Inteiro na Agenda */
     .agenda-month-picker {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
       background: var(--surface); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
@@ -263,7 +262,7 @@
 
     .muted { color: var(--muted); font-size: 12px; }
     .empty-state { padding: 30px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
-    .sync-status { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.15); display: inline-block; margin-top: 5px; }
+    .sync-status { font-size: 11px; padding: 4px 9px; border-radius: 12px; background: rgba(255,255,255,0.18); display: inline-block; margin-top: 6px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -274,10 +273,10 @@
   const { useState, useEffect, useMemo } = React;
 
   // =========================================================================
-  // 🔴 CONFIGURAÇÃO DIRETA DO SEU PROJETO FIREBASE (nellus-gestao):
+  // 🔴 CONFIGURAÇÃO FIREBASE (Substitua a sua apiKey se já tiver copiado)
   // =========================================================================
   const firebaseConfig = {
-    apiKey: "COLE_AQUI_SUA_API_KEY_DO_FIREBASE", // Cole a chave que aparece nas configurações do seu Firebase
+    apiKey: "COLE_AQUI_SUA_API_KEY_DO_FIREBASE",
     authDomain: "nellus-gestao.firebaseapp.com",
     databaseURL: "https://nellus-gestao-default-rtdb.firebaseio.com",
     projectId: "nellus-gestao",
@@ -285,18 +284,21 @@
     appId: "nellus-gestao-web"
   };
 
-  // Inicializa o Firebase Realtime
   let db = null;
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+  const isConfigValid = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("COLE_AQUI");
+
+  if (isConfigValid) {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      db = firebase.database();
+    } catch (err) {
+      console.error("Erro ao iniciar Firebase:", err);
     }
-    db = firebase.database();
-  } catch (err) {
-    console.error("Erro no Firebase:", err);
   }
 
-  // Utilitários de Moeda (R$ 2.250,57)
+  // Utilitários de Moeda
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString("pt-BR", {
       style: "currency",
@@ -340,7 +342,7 @@
     );
   }
 
-  // --- AGENDA COM MÊS INTEIRO & EXPORTAÇÕES ---
+  // --- AGENDA ---
   function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
@@ -396,7 +398,7 @@
       doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Mês de referência: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
 
       const tableData = bookings
         .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
@@ -425,7 +427,7 @@
         <div className="view-head">
           <div>
             <h2>Agenda</h2>
-            <p>Reservas centralizadas com visualização do mês inteiro.</p>
+            <p>Reservas e disponibilidade de salas.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
@@ -435,7 +437,7 @@
         </div>
 
         <div className="agenda-month-picker">
-          <label>Selecione o Mês:</label>
+          <label>Mês:</label>
           <input
             type="month"
             value={currentMonth}
@@ -543,14 +545,22 @@
     );
   }
 
-  // --- CLIENTES ---
+  // --- CLIENTES (COM ATUALIZAÇÃO IMEDIATA) ---
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
 
     const submit = (e) => {
       e.preventDefault();
-      onAdd({ ...draft, id: uid("c"), since: new Date().toISOString().slice(0, 10) });
+      if (!draft.name.trim()) return;
+
+      const novoCliente = {
+        ...draft,
+        id: uid("c_"),
+        since: new Date().toISOString().slice(0, 10)
+      };
+
+      onAdd(novoCliente);
       setShowForm(false);
       setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
     };
@@ -559,8 +569,8 @@
       <div className="view">
         <div className="view-head">
           <div>
-            <h2>Clientes</h2>
-            <p>Gerenciamento de contratos em tempo real.</p>
+            <h2>Clientes ({clients.length})</h2>
+            <p>Gerenciamento de contratos e contatos cadastrados.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
@@ -581,88 +591,101 @@
           </div>
         </div>
 
-        <div className="client-grid">
-          {clients.map((c) => (
-            <div className="client-card" key={c.id}>
-              <div className="client-card-top">
-                <div style={{ flex: 1 }}>
+        {clients.length === 0 ? (
+          <div className="empty-state">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" acima para cadastrar.</div>
+        ) : (
+          <div className="client-grid">
+            {clients.map((c) => (
+              <div className="client-card" key={c.id}>
+                <div className="client-card-top">
+                  <div style={{ flex: 1 }}>
+                    <input 
+                      className="inline-input" 
+                      style={{ fontWeight: "bold", fontSize: "15px" }} 
+                      value={c.name || ""} 
+                      placeholder="Nome do cliente" 
+                      onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
+                    />
+                    <input 
+                      className="inline-input muted" 
+                      value={c.document || ""} 
+                      placeholder="CPF / CNPJ" 
+                      onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
+                    />
+                  </div>
+                  <select 
+                    className="inline-select" 
+                    value={c.type || "presencial"} 
+                    onChange={(e) => onUpdate({ ...c, type: e.target.value })}
+                  >
+                    <option value="presencial">{typeLabels.presencial}</option>
+                    <option value="salaFixa">{typeLabels.salaFixa}</option>
+                    <option value="virtual">{typeLabels.virtual}</option>
+                  </select>
+                </div>
+
+                <div className="client-line">
+                  <span>📍</span>
                   <input 
                     className="inline-input" 
-                    style={{ fontWeight: "bold", fontSize: "14px" }} 
-                    value={c.name || ""} 
-                    placeholder="Nome do cliente" 
-                    onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
-                  />
-                  <input 
-                    className="inline-input muted" 
-                    value={c.document || ""} 
-                    placeholder="CPF / CNPJ" 
-                    onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
+                    value={c.address || ""} 
+                    placeholder="Endereço" 
+                    onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
                   />
                 </div>
-                <select 
-                  className="inline-select" 
-                  value={c.type || "presencial"} 
-                  onChange={(e) => onUpdate({ ...c, type: e.target.value })}
-                >
-                  <option value="presencial">{typeLabels.presencial}</option>
-                  <option value="salaFixa">{typeLabels.salaFixa}</option>
-                  <option value="virtual">{typeLabels.virtual}</option>
-                </select>
-              </div>
 
-              <div className="client-line">
-                <span>📍</span>
-                <input 
-                  className="inline-input" 
-                  value={c.address || ""} 
-                  placeholder="Endereço" 
-                  onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
-                />
-              </div>
-
-              <div className="client-line">
-                <span>📞</span>
-                <input 
-                  className="inline-input" 
-                  value={c.phone || ""} 
-                  placeholder="Telefone" 
-                  onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
-                />
-              </div>
-
-              <div className="client-line">
-                <span>✉️</span>
-                <input 
-                  className="inline-input" 
-                  value={c.email || ""} 
-                  placeholder="E-mail" 
-                  onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
-                />
-              </div>
-
-              <div className="client-card-foot">
-                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <span className="muted">Desde:</span>
+                <div className="client-line">
+                  <span>📞</span>
                   <input 
-                    type="date" 
-                    className="inline-input muted" 
-                    value={c.since || ""} 
-                    onChange={(e) => onUpdate({ ...c, since: e.target.value })} 
+                    className="inline-input" 
+                    value={c.phone || ""} 
+                    placeholder="Telefone" 
+                    onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
                   />
                 </div>
-                <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
+
+                <div className="client-line">
+                  <span>✉️</span>
+                  <input 
+                    className="inline-input" 
+                    value={c.email || ""} 
+                    placeholder="E-mail" 
+                    onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
+                  />
+                </div>
+
+                <div className="client-card-foot">
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span className="muted">Desde:</span>
+                    <input 
+                      type="date" 
+                      className="inline-input muted" 
+                      value={c.since || ""} 
+                      onChange={(e) => onUpdate({ ...c, since: e.target.value })} 
+                    />
+                  </div>
+                  <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {showForm && (
           <Modal title="Novo cliente" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
-              <div className="field"><label>Nome / Razão social</label><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required /></div>
-              <div className="field"><label>CPF / CNPJ</label><input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} /></div>
-              <div className="field"><label>Endereço</label><input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
+              <div className="field">
+                <label>Nome / Razão social *</label>
+                <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Maria Souza" required autoFocus />
+              </div>
+              <div className="field">
+                <label>CPF / CNPJ</label>
+                <input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} placeholder="000.000.000-00" />
+              </div>
+              <div className="field">
+                <label>Endereço</label>
+                <input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="Rua, número, bairro" />
+              </div>
               <div className="field">
                 <label>Tipo de Contrato</label>
                 <div className="radio-row">
@@ -675,8 +698,8 @@
                 </div>
               </div>
               <div className="form-row">
-                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} /></div>
-                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} /></div>
+                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="(24) 99999-9999" /></div>
+                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="cliente@email.com" /></div>
               </div>
               <button className="btn-primary full" type="submit">Cadastrar Cliente</button>
             </form>
@@ -686,7 +709,7 @@
     );
   }
 
-  // --- FINANCEIRO COM MÁSCARA, GRÁFICO & EXPORTAÇÃO ---
+  // --- FINANCEIRO ---
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ 
@@ -717,7 +740,7 @@
         amount: amount, 
         date: draft.date, 
         category: draft.category, 
-        id: uid("t") 
+        id: uid("t_") 
       });
       setShowForm(false);
       setDraft({ type: "entrada", desc: "", maskedAmount: "", date: draft.date, category: "" });
@@ -782,7 +805,7 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Controle financeiro em tempo real integrado à nuvem.</p>
+            <p>Controle financeiro e fluxo de caixa.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportFinanceiroXLS}>📥 XLS</button>
@@ -830,7 +853,7 @@
 
         <div className="tx-panel">
           <div className="chart-panel-head">
-            <h3>Lançamentos</h3>
+            <h3>Lançamentos ({tx.length})</h3>
           </div>
           <div className="tx-list">
             {tx.length === 0 && <div className="empty-state">Nenhum lançamento registrado.</div>}
@@ -900,12 +923,12 @@
                 </label>
               </div>
               <div className="field">
-                <label>Descrição</label>
-                <input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required />
+                <label>Descrição *</label>
+                <input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required autoFocus />
               </div>
               <div className="form-row">
                 <div className="field">
-                  <label>Valor (R$)</label>
+                  <label>Valor (R$) *</label>
                   <input 
                     type="text" 
                     placeholder="R$ 0,00"
@@ -931,27 +954,37 @@
     );
   }
 
-  // --- APP PRINCIPAL INTEGRADO AO FIREBASE ---
+  // --- COMPONENTE PRINCIPAL (COM PERSISTÊNCIA GARANTIDA) ---
   function NellusApp() {
-    const [tab, setTab] = useState("agenda");
+    const [tab, setTab] = useState("clientes");
     const [statusMsg, setStatusMsg] = useState("Conectando...");
-    const [clients, setClients] = useState([]);
-    const [bookings, setBookings] = useState([]);
-    const [tx, setTx] = useState([]);
-    const [typeLabels, setTypeLabels] = useState({
-      presencial: "Presencial",
-      salaFixa: "Sala fixa",
-      virtual: "Escritório virtual"
+    
+    // Inicialização direta do localStorage para visualização imediata
+    const [clients, setClients] = useState(() => {
+      try { return JSON.parse(localStorage.getItem("nellus_clients") || "[]"); } catch(e) { return []; }
+    });
+    const [bookings, setBookings] = useState(() => {
+      try { return JSON.parse(localStorage.getItem("nellus_bookings") || "[]"); } catch(e) { return []; }
+    });
+    const [tx, setTx] = useState(() => {
+      try { return JSON.parse(localStorage.getItem("nellus_tx") || "[]"); } catch(e) { return []; }
+    });
+    const [typeLabels, setTypeLabels] = useState(() => {
+      try {
+        return JSON.parse(localStorage.getItem("nellus_labels") || '{"presencial":"Presencial","salaFixa":"Sala fixa","virtual":"Escritório virtual"}');
+      } catch(e) {
+        return { presencial: "Presencial", salaFixa: "Sala fixa", virtual: "Escritório virtual" };
+      }
     });
 
-    // Escuta em tempo real direto do Firebase:
+    // Sincronização com o Firebase em Tempo Real
     useEffect(() => {
       if (!db) {
-        setStatusMsg("🟢 Modo Local");
+        setStatusMsg("💾 Modo Local (Preencha a apiKey para nuvem)");
         return;
       }
 
-      setStatusMsg("🟢 Conectado em Tempo Real");
+      setStatusMsg("🟢 Nuvem Conectada");
 
       const clientsRef = db.ref("nellus/clients");
       const bookingsRef = db.ref("nellus/bookings");
@@ -960,22 +993,39 @@
 
       clientsRef.on("value", (snap) => {
         const val = snap.val();
-        setClients(val ? Object.values(val) : []);
+        if (val) {
+          const list = Object.values(val);
+          setClients(list);
+          localStorage.setItem("nellus_clients", JSON.stringify(list));
+        }
+      }, (err) => {
+        setStatusMsg("⚠️ Erro de permissão no Firebase");
       });
 
       bookingsRef.on("value", (snap) => {
         const val = snap.val();
-        setBookings(val ? Object.values(val) : []);
+        if (val) {
+          const list = Object.values(val);
+          setBookings(list);
+          localStorage.setItem("nellus_bookings", JSON.stringify(list));
+        }
       });
 
       txRef.on("value", (snap) => {
         const val = snap.val();
-        setTx(val ? Object.values(val) : []);
+        if (val) {
+          const list = Object.values(val);
+          setTx(list);
+          localStorage.setItem("nellus_tx", JSON.stringify(list));
+        }
       });
 
       labelsRef.on("value", (snap) => {
         const val = snap.val();
-        if (val) setTypeLabels(val);
+        if (val) {
+          setTypeLabels(val);
+          localStorage.setItem("nellus_labels", JSON.stringify(val));
+        }
       });
 
       return () => {
@@ -986,33 +1036,86 @@
       };
     }, []);
 
-    // Salvar no Firebase
-    const salvarFirebase = (caminho, id, dados) => {
-      if (!db) return;
-      if (dados === null) {
-        db.ref(`nellus/${caminho}/${id}`).remove();
-      } else {
-        db.ref(`nellus/${caminho}/${id}`).set(dados);
+    // Função de sincronização com o banco
+    const syncToFirebase = (caminho, id, dados) => {
+      if (db) {
+        if (dados === null) {
+          db.ref(`nellus/${caminho}/${id}`).remove().catch((e) => console.error(e));
+        } else {
+          db.ref(`nellus/${caminho}/${id}`).set(dados).catch((e) => console.error(e));
+        }
       }
     };
 
-    // Handlers Clientes
-    const handleAddClient = (novo) => salvarFirebase("clients", novo.id, novo);
-    const handleUpdateClient = (item) => salvarFirebase("clients", item.id, item);
-    const handleRemoveClient = (id) => salvarFirebase("clients", id, null);
+    // Handlers Clientes (atualiza local E nuvem)
+    const handleAddClient = (novo) => {
+      const atualizados = [...clients, novo];
+      setClients(atualizados);
+      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
+      syncToFirebase("clients", novo.id, novo);
+    };
+
+    const handleUpdateClient = (item) => {
+      const atualizados = clients.map((c) => (c.id === item.id ? item : c));
+      setClients(atualizados);
+      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
+      syncToFirebase("clients", item.id, item);
+    };
+
+    const handleRemoveClient = (id) => {
+      const atualizados = clients.filter((c) => c.id !== id);
+      setClients(atualizados);
+      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
+      syncToFirebase("clients", id, null);
+    };
 
     // Handlers Agenda
-    const handleAddBooking = (novo) => salvarFirebase("bookings", novo.id, novo);
-    const handleUpdateBooking = (item) => salvarFirebase("bookings", item.id, item);
-    const handleRemoveBooking = (id) => salvarFirebase("bookings", id, null);
+    const handleAddBooking = (novo) => {
+      const atualizados = [...bookings, novo];
+      setBookings(atualizados);
+      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
+      syncToFirebase("bookings", novo.id, novo);
+    };
+
+    const handleUpdateBooking = (item) => {
+      const atualizados = bookings.map((b) => (b.id === item.id ? item : b));
+      setBookings(atualizados);
+      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
+      syncToFirebase("bookings", item.id, item);
+    };
+
+    const handleRemoveBooking = (id) => {
+      const atualizados = bookings.filter((b) => b.id !== id);
+      setBookings(atualizados);
+      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
+      syncToFirebase("bookings", id, null);
+    };
 
     // Handlers Financeiro
-    const handleAddTx = (novo) => salvarFirebase("tx", novo.id, novo);
-    const handleUpdateTx = (item) => salvarFirebase("tx", item.id, item);
-    const handleRemoveTx = (id) => salvarFirebase("tx", id, null);
+    const handleAddTx = (novo) => {
+      const atualizados = [...tx, novo];
+      setTx(atualizados);
+      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
+      syncToFirebase("tx", novo.id, novo);
+    };
+
+    const handleUpdateTx = (item) => {
+      const atualizados = tx.map((t) => (t.id === item.id ? item : t));
+      setTx(atualizados);
+      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
+      syncToFirebase("tx", item.id, item);
+    };
+
+    const handleRemoveTx = (id) => {
+      const atualizados = tx.filter((t) => t.id !== id);
+      setTx(atualizados);
+      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
+      syncToFirebase("tx", id, null);
+    };
 
     const handleUpdateLabels = (labels) => {
       setTypeLabels(labels);
+      localStorage.setItem("nellus_labels", JSON.stringify(labels));
       if (db) db.ref("nellus/typeLabels").set(labels);
     };
 
@@ -1038,8 +1141,8 @@
             </button>
           </nav>
           <div className="sidebar-foot">
-            <b>Vercel + Firebase</b><br />
-            Dados sincronizados em tempo real para múltiplos usuários pelo link.
+            <b>Nellus Coworking</b><br />
+            Dados centralizados em tempo real.
           </div>
         </aside>
 
