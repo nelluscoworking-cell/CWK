@@ -2,12 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nellus Coworking - Gestão</title>
   
   <!-- React & Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase v8 (Tempo Real) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <!-- Bibliotecas de Exportação XLS e PDF -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -47,6 +52,10 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
     .nellus-app * { box-sizing: border-box; }
+
+    @media (max-width: 800px) {
+      .nellus-app { grid-template-columns: 1fr; }
+    }
 
     .sidebar {
       background: linear-gradient(180deg, var(--teal-deep), #08392C 85%);
@@ -168,7 +177,7 @@
     .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
-    /* Mês Inteiro da Agenda */
+    /* Mês Inteiro na Agenda */
     .agenda-month-picker {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
       background: var(--surface); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
@@ -213,7 +222,6 @@
     .stat-value.up { color: var(--up); }
     .stat-value.down { color: var(--down); }
 
-    /* Painel do Gráfico Financeiro */
     .financial-chart-panel {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -265,7 +273,30 @@
 <script type="text/babel">
   const { useState, useEffect, useMemo } = React;
 
-  // Formatação Monetária
+  // =========================================================================
+  // 🔴 CONFIGURAÇÃO DIRETA DO SEU PROJETO FIREBASE (nellus-gestao):
+  // =========================================================================
+  const firebaseConfig = {
+    apiKey: "COLE_AQUI_SUA_API_KEY_DO_FIREBASE", // Cole a chave que aparece nas configurações do seu Firebase
+    authDomain: "nellus-gestao.firebaseapp.com",
+    databaseURL: "https://nellus-gestao-default-rtdb.firebaseio.com",
+    projectId: "nellus-gestao",
+    storageBucket: "nellus-gestao.firebasestorage.app",
+    appId: "nellus-gestao-web"
+  };
+
+  // Inicializa o Firebase Realtime
+  let db = null;
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.database();
+  } catch (err) {
+    console.error("Erro no Firebase:", err);
+  }
+
+  // Utilitários de Moeda (R$ 2.250,57)
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString("pt-BR", {
       style: "currency",
@@ -275,7 +306,6 @@
     });
   };
 
-  // Máscara estilo R$ 2.250,57
   const maskMoneyInput = (rawString) => {
     const digits = String(rawString || "").replace(/\D/g, "");
     if (!digits) return "";
@@ -310,7 +340,7 @@
     );
   }
 
-  // --- AGENDA ---
+  // --- AGENDA COM MÊS INTEIRO & EXPORTAÇÕES ---
   function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
@@ -366,7 +396,7 @@
       doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      doc.text(`Mês de referência: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
 
       const tableData = bookings
         .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
@@ -530,7 +560,7 @@
         <div className="view-head">
           <div>
             <h2>Clientes</h2>
-            <p>Gerenciamento de contratos centralizado na nuvem.</p>
+            <p>Gerenciamento de contratos em tempo real.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
@@ -656,7 +686,7 @@
     );
   }
 
-  // --- FINANCEIRO ---
+  // --- FINANCEIRO COM MÁSCARA, GRÁFICO & EXPORTAÇÃO ---
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ 
@@ -752,7 +782,7 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Controle financeiro em tempo real integrado ao Google Drive.</p>
+            <p>Controle financeiro em tempo real integrado à nuvem.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportFinanceiroXLS}>📥 XLS</button>
@@ -901,10 +931,10 @@
     );
   }
 
-  // --- APP PRINCIPAL COM SINCRONIZAÇÃO EM TEMPO REAL ---
+  // --- APP PRINCIPAL INTEGRADO AO FIREBASE ---
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
-    const [statusMsg, setStatusMsg] = useState("🟢 Conectado");
+    const [statusMsg, setStatusMsg] = useState("Conectando...");
     const [clients, setClients] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [tx, setTx] = useState([]);
@@ -914,94 +944,76 @@
       virtual: "Escritório virtual"
     });
 
-    // Salva na planilha central do Google Drive
-    const salvarNoSheets = (chave, dados) => {
-      setStatusMsg("⏳ Salvando...");
-      if (window.google && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado"))
-          .withFailureHandler(() => setStatusMsg("⚠️ Erro ao salvar"))
-          .salvarDados(chave, JSON.stringify(dados));
-      }
-    };
-
-    // Consulta os dados em tempo real da planilha
-    const carregar = () => {
-      if (window.google && google.script && google.script.run) {
-        google.script.run.withSuccessHandler((res) => {
-          if (!res) return;
-          try {
-            const data = typeof res === "string" ? JSON.parse(res) : res;
-            if (data.clients) setClients(data.clients);
-            if (data.bookings) setBookings(data.bookings);
-            if (data.tx) setTx(data.tx);
-            if (data.typeLabels) setTypeLabels(data.typeLabels);
-          } catch(e) {}
-        }).carregarDados();
-      }
-    };
-
+    // Escuta em tempo real direto do Firebase:
     useEffect(() => {
-      carregar();
-      // Atualização automática a cada 4 segundos para qualquer pessoa que estiver com o link aberto
-      const interval = setInterval(carregar, 4000);
-      return () => clearInterval(interval);
+      if (!db) {
+        setStatusMsg("🟢 Modo Local");
+        return;
+      }
+
+      setStatusMsg("🟢 Conectado em Tempo Real");
+
+      const clientsRef = db.ref("nellus/clients");
+      const bookingsRef = db.ref("nellus/bookings");
+      const txRef = db.ref("nellus/tx");
+      const labelsRef = db.ref("nellus/typeLabels");
+
+      clientsRef.on("value", (snap) => {
+        const val = snap.val();
+        setClients(val ? Object.values(val) : []);
+      });
+
+      bookingsRef.on("value", (snap) => {
+        const val = snap.val();
+        setBookings(val ? Object.values(val) : []);
+      });
+
+      txRef.on("value", (snap) => {
+        const val = snap.val();
+        setTx(val ? Object.values(val) : []);
+      });
+
+      labelsRef.on("value", (snap) => {
+        const val = snap.val();
+        if (val) setTypeLabels(val);
+      });
+
+      return () => {
+        clientsRef.off();
+        bookingsRef.off();
+        txRef.off();
+        labelsRef.off();
+      };
     }, []);
 
+    // Salvar no Firebase
+    const salvarFirebase = (caminho, id, dados) => {
+      if (!db) return;
+      if (dados === null) {
+        db.ref(`nellus/${caminho}/${id}`).remove();
+      } else {
+        db.ref(`nellus/${caminho}/${id}`).set(dados);
+      }
+    };
+
     // Handlers Clientes
-    const handleAddClient = (novo) => {
-      const lista = [...clients, novo];
-      setClients(lista);
-      salvarNoSheets("clients", lista);
-    };
-    const handleUpdateClient = (item) => {
-      const lista = clients.map((c) => (c.id === item.id ? item : c));
-      setClients(lista);
-      salvarNoSheets("clients", lista);
-    };
-    const handleRemoveClient = (id) => {
-      const lista = clients.filter((c) => c.id !== id);
-      setClients(lista);
-      salvarNoSheets("clients", lista);
-    };
+    const handleAddClient = (novo) => salvarFirebase("clients", novo.id, novo);
+    const handleUpdateClient = (item) => salvarFirebase("clients", item.id, item);
+    const handleRemoveClient = (id) => salvarFirebase("clients", id, null);
 
     // Handlers Agenda
-    const handleAddBooking = (novo) => {
-      const lista = [...bookings, novo];
-      setBookings(lista);
-      salvarNoSheets("bookings", lista);
-    };
-    const handleUpdateBooking = (item) => {
-      const lista = bookings.map((b) => (b.id === item.id ? item : b));
-      setBookings(lista);
-      salvarNoSheets("bookings", lista);
-    };
-    const handleRemoveBooking = (id) => {
-      const lista = bookings.filter((b) => b.id !== id);
-      setBookings(lista);
-      salvarNoSheets("bookings", lista);
-    };
+    const handleAddBooking = (novo) => salvarFirebase("bookings", novo.id, novo);
+    const handleUpdateBooking = (item) => salvarFirebase("bookings", item.id, item);
+    const handleRemoveBooking = (id) => salvarFirebase("bookings", id, null);
 
     // Handlers Financeiro
-    const handleAddTx = (novo) => {
-      const lista = [...tx, novo];
-      setTx(lista);
-      salvarNoSheets("tx", lista);
-    };
-    const handleUpdateTx = (item) => {
-      const lista = tx.map((t) => (t.id === item.id ? item : t));
-      setTx(lista);
-      salvarNoSheets("tx", lista);
-    };
-    const handleRemoveTx = (id) => {
-      const lista = tx.filter((t) => t.id !== id);
-      setTx(lista);
-      salvarNoSheets("tx", lista);
-    };
+    const handleAddTx = (novo) => salvarFirebase("tx", novo.id, novo);
+    const handleUpdateTx = (item) => salvarFirebase("tx", item.id, item);
+    const handleRemoveTx = (id) => salvarFirebase("tx", id, null);
 
     const handleUpdateLabels = (labels) => {
       setTypeLabels(labels);
-      salvarNoSheets("typeLabels", labels);
+      if (db) db.ref("nellus/typeLabels").set(labels);
     };
 
     return (
@@ -1026,8 +1038,8 @@
             </button>
           </nav>
           <div className="sidebar-foot">
-            <b>Google Workspace</b><br />
-            Dados sincronizados em tempo real diretamente na sua planilha do Drive.
+            <b>Vercel + Firebase</b><br />
+            Dados sincronizados em tempo real para múltiplos usuários pelo link.
           </div>
         </aside>
 
