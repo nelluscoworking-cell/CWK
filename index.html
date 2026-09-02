@@ -9,7 +9,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Bibliotecas para exportação XLS e PDF -->
+  <!-- Bibliotecas de Exportação XLS e PDF -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -19,7 +19,7 @@
 
     body {
       margin: 0;
-      padding: 20px;
+      padding: 16px;
       background-color: #EFEAE0;
       font-family: 'Manrope', system-ui, sans-serif;
     }
@@ -40,7 +40,7 @@
       background: var(--paper);
       display: grid;
       grid-template-columns: 240px 1fr;
-      min-height: 760px;
+      min-height: 800px;
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -94,7 +94,7 @@
     .btn-primary:hover { background: var(--orange-deep); color: #fff; }
     .btn-primary.secondary { background: #E4DFD3; color: #1B2420; }
     .btn-primary.secondary:hover { background: #D0C9B8; }
-    .btn-primary.outline { background: transparent; border: 1px solid var(--border); color: var(--ink); }
+    .btn-primary.outline { background: #FFFFFF; border: 1px solid var(--border); color: var(--ink); }
     .btn-primary.outline:hover { background: #EAE5D9; }
     .btn-primary.full { width: 100%; justify-content: center; margin-top: 8px; }
 
@@ -168,7 +168,7 @@
     .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
-    /* Estilos do Mês Inteiro da Agenda */
+    /* Mês Inteiro da Agenda */
     .agenda-month-picker {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
       background: var(--surface); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
@@ -263,9 +263,9 @@
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useMemo, useRef } = React;
+  const { useState, useEffect, useMemo } = React;
 
-  // Utilitários de Formatação Monetária Brasileira (R$ 2.250,57)
+  // Formatação Monetária
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString("pt-BR", {
       style: "currency",
@@ -275,7 +275,7 @@
     });
   };
 
-  // Transforma digitação contínua (ex: 225057) em "R$ 2.250,57"
+  // Máscara estilo R$ 2.250,57
   const maskMoneyInput = (rawString) => {
     const digits = String(rawString || "").replace(/\D/g, "");
     if (!digits) return "";
@@ -310,16 +310,15 @@
     );
   }
 
-  // --- COMPONENTE AGENDA ---
+  // --- AGENDA ---
   function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
-    const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7)); // Formato "AAAA-MM"
+    const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
     const [activeDate, setActiveDate] = useState(todayStr);
     const [showForm, setShowForm] = useState(false);
     const [isCustom, setIsCustom] = useState(false);
     const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", notes: "" });
 
-    // Gera todos os dias do mês selecionado
     const daysInMonth = useMemo(() => {
       const [year, month] = currentMonth.split("-").map(Number);
       const lastDay = new Date(year, month, 0).getDate();
@@ -344,14 +343,13 @@
       setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
     };
 
-    // Exportação da Agenda para XLS
     const exportAgendaXLS = () => {
       const data = bookings.map((b) => ({
         "Data": b.date.split("-").reverse().join("/"),
-        "Horário Inicial": b.start || "",
-        "Horário Final": b.end || "",
+        "Início": b.start || "",
+        "Fim": b.end || "",
         "Cliente": b.clientName || "",
-        "Espaço/Sala": b.room || "",
+        "Espaço / Sala": b.room || "",
         "Observações": b.notes || ""
       }));
       const ws = XLSX.utils.json_to_sheet(data);
@@ -360,7 +358,6 @@
       XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
     };
 
-    // Exportação da Agenda para PDF
     const exportAgendaPDF = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -369,7 +366,7 @@
       doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Mês de referência: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
 
       const tableData = bookings
         .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
@@ -398,7 +395,7 @@
         <div className="view-head">
           <div>
             <h2>Agenda</h2>
-            <p>Reservas e horários salvos em tempo real.</p>
+            <p>Reservas centralizadas com visualização do mês inteiro.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
@@ -407,9 +404,8 @@
           </div>
         </div>
 
-        {/* Seletor de Mês Inteiro */}
         <div className="agenda-month-picker">
-          <label>Mês:</label>
+          <label>Selecione o Mês:</label>
           <input
             type="month"
             value={currentMonth}
@@ -420,7 +416,6 @@
           />
         </div>
 
-        {/* Régua com TODOS os dias do mês */}
         <div className="date-rail-wrapper">
           <div className="date-rail">
             {daysInMonth.map((d) => {
@@ -518,7 +513,7 @@
     );
   }
 
-  // --- COMPONENTE CLIENTES ---
+  // --- CLIENTES ---
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
@@ -535,13 +530,13 @@
         <div className="view-head">
           <div>
             <h2>Clientes</h2>
-            <p>Gerenciamento de contratos em tempo real.</p>
+            <p>Gerenciamento de contratos centralizado na nuvem.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
 
         <div className="type-settings-bar">
-          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Planos e Categorias:</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Planos:</span>
           <div className="type-input-group">
             <span style={{ color: "#E08A52" }}>●</span>
             <input value={typeLabels.presencial} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
@@ -661,7 +656,7 @@
     );
   }
 
-  // --- COMPONENTE FINANCEIRO COM GRÁFICO, MÁSCARA E EXPORTAÇÕES ---
+  // --- FINANCEIRO ---
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ 
@@ -698,7 +693,6 @@
       setDraft({ type: "entrada", desc: "", maskedAmount: "", date: draft.date, category: "" });
     };
 
-    // Exportar Financeiro para XLS
     const exportFinanceiroXLS = () => {
       const data = tx.map((t) => ({
         "Data": t.date ? t.date.split("-").reverse().join("/") : "",
@@ -708,7 +702,6 @@
         "Valor (R$)": parseFloat(t.amount || 0)
       }));
 
-      // Adiciona linha de totais
       data.push({});
       data.push({ "Descrição": "Total de Entradas", "Valor (R$)": totals.entradas });
       data.push({ "Descrição": "Total de Saídas", "Valor (R$)": totals.saidas });
@@ -720,7 +713,6 @@
       XLSX.writeFile(wb, `Financeiro_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
-    // Exportar Financeiro para PDF
     const exportFinanceiroPDF = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -730,7 +722,7 @@
       
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Data de Emissão: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
       doc.text(`Resumo: Entradas ${formatBRL(totals.entradas)} | Saídas ${formatBRL(totals.saidas)} | Saldo: ${formatBRL(totals.saldo)} (${totals.isPositivo ? "POSITIVO" : "NEGATIVO"})`, 14, 31);
 
       const tableData = tx
@@ -760,7 +752,7 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Controle financeiro em tempo real.</p>
+            <p>Controle financeiro em tempo real integrado ao Google Drive.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportFinanceiroXLS}>📥 XLS</button>
@@ -769,7 +761,6 @@
           </div>
         </div>
 
-        {/* Cards de Métricas */}
         <div className="stat-row">
           <div className="stat-card">
             <span className="stat-label">Entradas</span>
@@ -785,36 +776,28 @@
           </div>
         </div>
 
-        {/* Gráfico Visual: Balanço Positivo / Negativo */}
         <div className="financial-chart-panel">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", fontWeight: "bold" }}>Saúde Financeira</span>
-              <h3 style={{ margin: "2px 0 0", fontFamily: "'Fraunces', serif" }}>Distribuição e Resultado</h3>
+              <h3 style={{ margin: "2px 0 0", fontFamily: "'Fraunces', serif" }}>Distribuição do Resultado</h3>
             </div>
             <span className={`financial-status-tag ${totals.isPositivo ? "positive" : "negative"}`}>
-              {totals.isPositivo ? "● SALDO POSITIVO (LUCRO)" : "● SALDO NEGATIVO (DÉFICIT)"}
+              {totals.isPositivo ? "● SALDO POSITIVO" : "● SALDO NEGATIVO"}
             </span>
           </div>
 
-          <div className="progress-bar-container" title={`Entradas: ${totals.percentEntradas.toFixed(1)}% | Saídas: ${totals.percentSaidas.toFixed(1)}%`}>
+          <div className="progress-bar-container">
             <div className="progress-bar-fill in" style={{ width: `${totals.percentEntradas}%` }} />
             <div className="progress-bar-fill out" style={{ width: `${totals.percentSaidas}%` }} />
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--muted)" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--up)" }}></span>
-              Entradas: {totals.percentEntradas.toFixed(1)}%
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--down)" }}></span>
-              Saídas: {totals.percentSaidas.toFixed(1)}%
-            </span>
+            <span>Receitas: {totals.percentEntradas.toFixed(1)}%</span>
+            <span>Despesas: {totals.percentSaidas.toFixed(1)}%</span>
           </div>
         </div>
 
-        {/* Tabela de Lançamentos */}
         <div className="tx-panel">
           <div className="chart-panel-head">
             <h3>Lançamentos</h3>
@@ -856,7 +839,6 @@
                   <option value="saida">Saída (-)</option>
                 </select>
 
-                {/* Edição em linha do valor com máscara */}
                 <div style={{ width: "130px", textAlign: "right" }}>
                   <input 
                     type="text"
@@ -876,7 +858,6 @@
           </div>
         </div>
 
-        {/* Modal de Cadastro de Lançamento com Máscara R$ 2.250,57 */}
         {showForm && (
           <Modal title="Novo lançamento" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
@@ -920,10 +901,10 @@
     );
   }
 
-  // --- COMPONENTE PRINCIPAL DO APP ---
+  // --- APP PRINCIPAL COM SINCRONIZAÇÃO EM TEMPO REAL ---
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
-    const [statusMsg, setStatusMsg] = useState("🟢 Sincronizado (Tempo Real)");
+    const [statusMsg, setStatusMsg] = useState("🟢 Conectado");
     const [clients, setClients] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [tx, setTx] = useState([]);
@@ -933,22 +914,18 @@
       virtual: "Escritório virtual"
     });
 
-    // Função de sincronização com o Google Apps Script (Google Sheets no Drive)
+    // Salva na planilha central do Google Drive
     const salvarNoSheets = (chave, dados) => {
       setStatusMsg("⏳ Salvando...");
       if (window.google && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado (Tempo Real)"))
+          .withSuccessHandler(() => setStatusMsg("🟢 Sincronizado"))
           .withFailureHandler(() => setStatusMsg("⚠️ Erro ao salvar"))
           .salvarDados(chave, JSON.stringify(dados));
-      } else {
-        // Fallback local se estiver executando fora do Apps Script
-        localStorage.setItem(`nellus_${chave}`, JSON.stringify(dados));
-        setTimeout(() => setStatusMsg("🟢 Sincronizado (Local)"), 300);
       }
     };
 
-    // Carrega dados e sincroniza em tempo real
+    // Consulta os dados em tempo real da planilha
     const carregar = () => {
       if (window.google && google.script && google.script.run) {
         google.script.run.withSuccessHandler((res) => {
@@ -961,24 +938,13 @@
             if (data.typeLabels) setTypeLabels(data.typeLabels);
           } catch(e) {}
         }).carregarDados();
-      } else {
-        try {
-          const c = localStorage.getItem("nellus_clients");
-          const b = localStorage.getItem("nellus_bookings");
-          const t = localStorage.getItem("nellus_tx");
-          const l = localStorage.getItem("nellus_typeLabels");
-          if (c) setClients(JSON.parse(c));
-          if (b) setBookings(JSON.parse(b));
-          if (t) setTx(JSON.parse(t));
-          if (l) setTypeLabels(JSON.parse(l));
-        } catch (e) {}
       }
     };
 
     useEffect(() => {
       carregar();
-      // Polling a cada 5 segundos para refletir alterações de outros usuários em tempo real
-      const interval = setInterval(carregar, 5000);
+      // Atualização automática a cada 4 segundos para qualquer pessoa que estiver com o link aberto
+      const interval = setInterval(carregar, 4000);
       return () => clearInterval(interval);
     }, []);
 
@@ -1061,7 +1027,7 @@
           </nav>
           <div className="sidebar-foot">
             <b>Google Workspace</b><br />
-            Dados sincronizados em tempo real para múltiplos usuários pelo link.
+            Dados sincronizados em tempo real diretamente na sua planilha do Drive.
           </div>
         </aside>
 
