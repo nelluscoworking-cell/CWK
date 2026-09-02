@@ -10,10 +10,6 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <!-- Bibliotecas de Exportação XLS e PDF -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -270,35 +266,11 @@
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useMemo } = React;
+  const { useState, useEffect, useMemo, useRef } = React;
 
-  // =========================================================================
-  // 🔴 CONFIGURAÇÃO FIREBASE (Substitua a sua apiKey se já tiver copiado)
-  // =========================================================================
-  const firebaseConfig = {
-    apiKey: "COLE_AQUI_SUA_API_KEY_DO_FIREBASE",
-    authDomain: "nellus-gestao.firebaseapp.com",
-    databaseURL: "https://nellus-gestao-default-rtdb.firebaseio.com",
-    projectId: "nellus-gestao",
-    storageBucket: "nellus-gestao.firebasestorage.app",
-    appId: "nellus-gestao-web"
-  };
+  // Endpoint REST direto do Firebase do projeto nellus-gestao
+  const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
 
-  let db = null;
-  const isConfigValid = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("COLE_AQUI");
-
-  if (isConfigValid) {
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      db = firebase.database();
-    } catch (err) {
-      console.error("Erro ao iniciar Firebase:", err);
-    }
-  }
-
-  // Utilitários de Moeda
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString("pt-BR", {
       style: "currency",
@@ -326,7 +298,7 @@
     return parseFloat((Number(digits) / 100).toFixed(2));
   };
 
-  function uid(p) { return p + Math.random().toString(36).slice(2, 7); }
+  function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
 
   function Modal({ title, onClose, children }) {
     return (
@@ -370,7 +342,7 @@
     const submit = (e) => {
       e.preventDefault();
       if (!draft.clientName || !draft.room) return;
-      onAdd({ ...draft, id: uid("b") });
+      onAdd({ ...draft, id: uid("b_") });
       setShowForm(false);
       setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
     };
@@ -426,8 +398,8 @@
       <div className="view">
         <div className="view-head">
           <div>
-            <h2>Agenda</h2>
-            <p>Reservas e disponibilidade de salas.</p>
+            <h2>Agenda ({bookings.length})</h2>
+            <p>Reservas centralizadas com visualização do mês inteiro.</p>
           </div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
@@ -437,7 +409,7 @@
         </div>
 
         <div className="agenda-month-picker">
-          <label>Mês:</label>
+          <label>Selecione o Mês:</label>
           <input
             type="month"
             value={currentMonth}
@@ -545,7 +517,7 @@
     );
   }
 
-  // --- CLIENTES (COM ATUALIZAÇÃO IMEDIATA) ---
+  // --- CLIENTES ---
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
@@ -570,7 +542,7 @@
         <div className="view-head">
           <div>
             <h2>Clientes ({clients.length})</h2>
-            <p>Gerenciamento de contratos e contatos cadastrados.</p>
+            <p>Gerenciamento de contratos com salvamento centralizado na nuvem.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
@@ -592,7 +564,7 @@
         </div>
 
         {clients.length === 0 ? (
-          <div className="empty-state">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" acima para cadastrar.</div>
+          <div className="empty-state">Nenhum cliente cadastrado ainda. Clique no botão acima para adicionar.</div>
         ) : (
           <div className="client-grid">
             {clients.map((c) => (
@@ -709,7 +681,7 @@
     );
   }
 
-  // --- FINANCEIRO ---
+  // --- FINANCEIRO COM MÁSCARA, GRÁFICO E EXPORTAÇÕES ---
   function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ 
@@ -804,7 +776,7 @@
       <div className="view">
         <div className="view-head">
           <div>
-            <h2>Financeiro</h2>
+            <h2>Financeiro ({tx.length})</h2>
             <p>Controle financeiro e fluxo de caixa.</p>
           </div>
           <div className="btn-group">
@@ -853,7 +825,7 @@
 
         <div className="tx-panel">
           <div className="chart-panel-head">
-            <h3>Lançamentos ({tx.length})</h3>
+            <h3>Lançamentos</h3>
           </div>
           <div className="tx-list">
             {tx.length === 0 && <div className="empty-state">Nenhum lançamento registrado.</div>}
@@ -954,12 +926,11 @@
     );
   }
 
-  // --- COMPONENTE PRINCIPAL (COM PERSISTÊNCIA GARANTIDA) ---
+  // --- COMPONENTE PRINCIPAL (SINCRONIZAÇÃO REST DIRETA) ---
   function NellusApp() {
     const [tab, setTab] = useState("clientes");
     const [statusMsg, setStatusMsg] = useState("Conectando...");
     
-    // Inicialização direta do localStorage para visualização imediata
     const [clients, setClients] = useState(() => {
       try { return JSON.parse(localStorage.getItem("nellus_clients") || "[]"); } catch(e) { return []; }
     });
@@ -977,96 +948,90 @@
       }
     });
 
-    // Sincronização com o Firebase em Tempo Real
-    useEffect(() => {
-      if (!db) {
-        setStatusMsg("💾 Modo Local (Preencha a apiKey para nuvem)");
-        return;
-      }
-
-      setStatusMsg("🟢 Nuvem Conectada");
-
-      const clientsRef = db.ref("nellus/clients");
-      const bookingsRef = db.ref("nellus/bookings");
-      const txRef = db.ref("nellus/tx");
-      const labelsRef = db.ref("nellus/typeLabels");
-
-      clientsRef.on("value", (snap) => {
-        const val = snap.val();
-        if (val) {
-          const list = Object.values(val);
-          setClients(list);
-          localStorage.setItem("nellus_clients", JSON.stringify(list));
+    // Função de sincronização com o banco pela API REST do Firebase
+    const buscarDadosDaNuvem = async () => {
+      try {
+        const res = await fetch(`${DB_BASE_URL}.json`);
+        if (!res.ok) {
+          setStatusMsg("⚠️ Libere as Regras no Firebase");
+          return;
         }
-      }, (err) => {
-        setStatusMsg("⚠️ Erro de permissão no Firebase");
-      });
-
-      bookingsRef.on("value", (snap) => {
-        const val = snap.val();
-        if (val) {
-          const list = Object.values(val);
-          setBookings(list);
-          localStorage.setItem("nellus_bookings", JSON.stringify(list));
+        const data = await res.json();
+        if (data) {
+          if (data.clients) {
+            const list = Object.values(data.clients);
+            setClients(list);
+            localStorage.setItem("nellus_clients", JSON.stringify(list));
+          }
+          if (data.bookings) {
+            const list = Object.values(data.bookings);
+            setBookings(list);
+            localStorage.setItem("nellus_bookings", JSON.stringify(list));
+          }
+          if (data.tx) {
+            const list = Object.values(data.tx);
+            setTx(list);
+            localStorage.setItem("nellus_tx", JSON.stringify(list));
+          }
+          if (data.typeLabels) {
+            setTypeLabels(data.typeLabels);
+            localStorage.setItem("nellus_labels", JSON.stringify(data.typeLabels));
+          }
         }
-      });
-
-      txRef.on("value", (snap) => {
-        const val = snap.val();
-        if (val) {
-          const list = Object.values(val);
-          setTx(list);
-          localStorage.setItem("nellus_tx", JSON.stringify(list));
-        }
-      });
-
-      labelsRef.on("value", (snap) => {
-        const val = snap.val();
-        if (val) {
-          setTypeLabels(val);
-          localStorage.setItem("nellus_labels", JSON.stringify(val));
-        }
-      });
-
-      return () => {
-        clientsRef.off();
-        bookingsRef.off();
-        txRef.off();
-        labelsRef.off();
-      };
-    }, []);
-
-    // Função de sincronização com o banco
-    const syncToFirebase = (caminho, id, dados) => {
-      if (db) {
-        if (dados === null) {
-          db.ref(`nellus/${caminho}/${id}`).remove().catch((e) => console.error(e));
-        } else {
-          db.ref(`nellus/${caminho}/${id}`).set(dados).catch((e) => console.error(e));
-        }
+        setStatusMsg("🟢 Nuvem Conectada");
+      } catch (err) {
+        console.error("Erro na busca REST:", err);
+        setStatusMsg("⚠️ Verifique a conexão");
       }
     };
 
-    // Handlers Clientes (atualiza local E nuvem)
+    // Enviar dados para o banco
+    const enviarParaNuvem = async (caminho, id, dados) => {
+      setStatusMsg("⏳ Salvando...");
+      try {
+        if (dados === null) {
+          await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "DELETE" });
+        } else {
+          await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
+          });
+        }
+        setStatusMsg("🟢 Salvo na Nuvem");
+      } catch (err) {
+        console.error("Erro ao salvar:", err);
+        setStatusMsg("⚠️ Erro ao salvar na Nuvem");
+      }
+    };
+
+    // Busca automática e polling para sincronizar entre aparelhos
+    useEffect(() => {
+      buscarDadosDaNuvem();
+      const interval = setInterval(buscarDadosDaNuvem, 4000);
+      return () => clearInterval(interval);
+    }, []);
+
+    // Handlers Clientes
     const handleAddClient = (novo) => {
       const atualizados = [...clients, novo];
       setClients(atualizados);
       localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      syncToFirebase("clients", novo.id, novo);
+      enviarParaNuvem("clients", novo.id, novo);
     };
 
     const handleUpdateClient = (item) => {
       const atualizados = clients.map((c) => (c.id === item.id ? item : c));
       setClients(atualizados);
       localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      syncToFirebase("clients", item.id, item);
+      enviarParaNuvem("clients", item.id, item);
     };
 
     const handleRemoveClient = (id) => {
       const atualizados = clients.filter((c) => c.id !== id);
       setClients(atualizados);
       localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      syncToFirebase("clients", id, null);
+      enviarParaNuvem("clients", id, null);
     };
 
     // Handlers Agenda
@@ -1074,21 +1039,21 @@
       const atualizados = [...bookings, novo];
       setBookings(atualizados);
       localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      syncToFirebase("bookings", novo.id, novo);
+      enviarParaNuvem("bookings", novo.id, novo);
     };
 
     const handleUpdateBooking = (item) => {
       const atualizados = bookings.map((b) => (b.id === item.id ? item : b));
       setBookings(atualizados);
       localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      syncToFirebase("bookings", item.id, item);
+      enviarParaNuvem("bookings", item.id, item);
     };
 
     const handleRemoveBooking = (id) => {
       const atualizados = bookings.filter((b) => b.id !== id);
       setBookings(atualizados);
       localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      syncToFirebase("bookings", id, null);
+      enviarParaNuvem("bookings", id, null);
     };
 
     // Handlers Financeiro
@@ -1096,27 +1061,33 @@
       const atualizados = [...tx, novo];
       setTx(atualizados);
       localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      syncToFirebase("tx", novo.id, novo);
+      enviarParaNuvem("tx", novo.id, novo);
     };
 
     const handleUpdateTx = (item) => {
       const atualizados = tx.map((t) => (t.id === item.id ? item : t));
       setTx(atualizados);
       localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      syncToFirebase("tx", item.id, item);
+      enviarParaNuvem("tx", item.id, item);
     };
 
     const handleRemoveTx = (id) => {
       const atualizados = tx.filter((t) => t.id !== id);
       setTx(atualizados);
       localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      syncToFirebase("tx", id, null);
+      enviarParaNuvem("tx", id, null);
     };
 
-    const handleUpdateLabels = (labels) => {
+    const handleUpdateLabels = async (labels) => {
       setTypeLabels(labels);
       localStorage.setItem("nellus_labels", JSON.stringify(labels));
-      if (db) db.ref("nellus/typeLabels").set(labels);
+      try {
+        await fetch(`${DB_BASE_URL}/typeLabels.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(labels)
+        });
+      } catch(e) {}
     };
 
     return (
@@ -1141,8 +1112,8 @@
             </button>
           </nav>
           <div className="sidebar-foot">
-            <b>Nellus Coworking</b><br />
-            Dados centralizados em tempo real.
+            <b>Nellus Gestão</b><br />
+            Sincronização em tempo real via nuvem.
           </div>
         </aside>
 
