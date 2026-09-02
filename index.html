@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Nellus Coworking - Gestão Integrada</title>
+  <title>Nellus Coworking - Gestão</title>
   <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -107,6 +107,44 @@
     .icon-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
     .icon-btn.ghost:hover { background: #F1ECE1; color: var(--down); }
 
+    /* Inline Edit Inputs */
+    .inline-input {
+      border: 1px solid transparent;
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      padding: 3px 6px;
+      border-radius: 6px;
+      width: 100%;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .inline-input:hover {
+      border-color: var(--border);
+      background: #FFFFFF;
+    }
+    .inline-input:focus {
+      border-color: var(--teal);
+      background: #FFFFFF;
+      outline: none;
+    }
+
+    .inline-select {
+      border: 1px solid transparent;
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      padding: 3px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .inline-select:hover, .inline-select:focus {
+      border-color: var(--teal);
+      background: #FFFFFF;
+      outline: none;
+    }
+
     /* Forms & Inputs */
     .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
     .field input, .field select {
@@ -138,14 +176,6 @@
     .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
 
-    /* Type Badge */
-    .type-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
-      background: #F0EFEA; color: var(--ink);
-    }
-    .type-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, #8A8578); }
-
     /* Cards & Grids */
     .type-settings-bar {
       display: flex; gap: 12px; margin-bottom: 18px; padding: 12px;
@@ -155,22 +185,13 @@
     .type-input-group { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
     .type-input-group input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
 
-    .segment-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
-    .segment-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px 16px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
-    }
-    .segment-card.active { border-color: var(--teal); background: #F0F7F4; }
-    .segment-count { font-size: 20px; font-weight: 700; color: var(--ink); }
-    .segment-label { font-size: 12px; color: var(--muted); font-weight: 600; }
-
     .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
     .client-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+      padding: 16px; display: flex; flex-direction: column; gap: 8px;
     }
-    .client-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .client-line { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .client-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
     /* Agenda */
@@ -183,13 +204,14 @@
 
     .agenda-list { display: flex; flex-direction: column; gap: 10px; }
     .agenda-row {
-      display: flex; align-items: center; gap: 16px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px;
+      display: flex; align-items: center; gap: 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
     }
-    .agenda-time { font-size: 13px; color: var(--muted); width: 110px; flex-shrink: 0; }
-    .agenda-main { display: flex; flex-direction: column; flex: 1; }
+    .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); width: 180px; flex-shrink: 0; }
+    .agenda-time input { padding: 2px 4px; font-size: 12.5px; }
+    .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
 
-    /* Stats & Charts */
+    /* Stats & Financial */
     .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -200,7 +222,7 @@
     .stat-value.up { color: var(--up); }
     .stat-value.down { color: var(--down); }
 
-    .chart-panel, .tx-panel {
+    .tx-panel {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
       padding: 18px; margin-bottom: 20px;
     }
@@ -208,12 +230,10 @@
     .chart-panel-head h3 { margin: 0 0 2px; font-family: 'Fraunces', serif; font-size: 18px; }
 
     .tx-list { display: flex; flex-direction: column; gap: 8px; }
-    .tx-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .tx-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
     .tx-row:last-child { border-bottom: none; }
-    .tx-main { display: flex; flex-direction: column; flex: 1; }
-    .tx-amount { font-weight: 700; font-size: 14px; }
-    .tx-amount.up { color: var(--up); }
-    .tx-amount.down { color: var(--down); }
+    .tx-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .tx-sub { display: flex; gap: 8px; align-items: center; }
 
     .muted { color: var(--muted); font-size: 12px; }
     .empty-state { padding: 30px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
@@ -265,7 +285,7 @@
   }
 
   // AGENDA COMPONENT
-  function Agenda({ bookings, clients, onAdd, onRemove }) {
+  function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
     const [activeDate, setActiveDate] = useState("2026-09-01");
     const [showForm, setShowForm] = useState(false);
     const [isCustom, setIsCustom] = useState(false);
@@ -303,10 +323,33 @@
           {dayBookings.length === 0 && <div className="empty-state">Nenhum agendamento para este dia.</div>}
           {dayBookings.map((b) => (
             <div className="agenda-row" key={b.id}>
-              <div className="agenda-time">⏱ {b.start} – {b.end}</div>
+              <div className="agenda-time">
+                <span>⏱</span>
+                <input type="time" className="inline-input" value={b.start} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
+                <span>–</span>
+                <input type="time" className="inline-input" value={b.end} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
+              </div>
               <div className="agenda-main">
-                <strong>{b.clientName}</strong>
-                <span className="muted">{b.room} {b.notes && `· ${b.notes}`}</span>
+                <input 
+                  className="inline-input" 
+                  style={{ fontWeight: "bold" }} 
+                  value={b.clientName} 
+                  onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} 
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input 
+                    className="inline-input muted" 
+                    placeholder="Espaço/Sala..."
+                    value={b.room} 
+                    onChange={(e) => onUpdate({ ...b, room: e.target.value })} 
+                  />
+                  <input 
+                    className="inline-input muted" 
+                    placeholder="Observações..."
+                    value={b.notes} 
+                    onChange={(e) => onUpdate({ ...b, notes: e.target.value })} 
+                  />
+                </div>
               </div>
               <button className="icon-btn ghost" onClick={() => onRemove(b.id)}>🗑</button>
             </div>
@@ -353,7 +396,7 @@
   }
 
   // CLIENTES COMPONENT
-  function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onRemove }) {
+  function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
 
@@ -395,17 +438,72 @@
           {clients.map((c) => (
             <div className="client-card" key={c.id}>
               <div className="client-card-top">
-                <div>
-                  <strong>{c.name || "Sem Nome"}</strong>
-                  <div className="muted">{c.document || "Doc. não informado"}</div>
+                <div style={{ flex: 1 }}>
+                  <input 
+                    className="inline-input" 
+                    style={{ fontWeight: "bold", fontSize: "14px" }} 
+                    value={c.name} 
+                    placeholder="Nome do cliente"
+                    onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
+                  />
+                  <input 
+                    className="inline-input muted" 
+                    value={c.document} 
+                    placeholder="CPF / CNPJ"
+                    onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
+                  />
                 </div>
-                <span className="type-badge"><i></i>{typeLabels[c.type] || c.type}</span>
+                <select 
+                  className="inline-select"
+                  value={c.type}
+                  onChange={(e) => onUpdate({ ...c, type: e.target.value })}
+                >
+                  <option value="presencial">{typeLabels.presencial}</option>
+                  <option value="salaFixa">{typeLabels.salaFixa}</option>
+                  <option value="virtual">{typeLabels.virtual}</option>
+                </select>
               </div>
-              {c.address && <div className="client-line">📍 {c.address}</div>}
-              {c.phone && <div className="client-line">📞 {c.phone}</div>}
-              {c.email && <div className="client-line">✉️ {c.email}</div>}
+
+              <div className="client-line">
+                <span>📍</span>
+                <input 
+                  className="inline-input" 
+                  value={c.address} 
+                  placeholder="Endereço"
+                  onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
+                />
+              </div>
+
+              <div className="client-line">
+                <span>📞</span>
+                <input 
+                  className="inline-input" 
+                  value={c.phone} 
+                  placeholder="Telefone"
+                  onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
+                />
+              </div>
+
+              <div className="client-line">
+                <span>✉️</span>
+                <input 
+                  className="inline-input" 
+                  value={c.email} 
+                  placeholder="E-mail"
+                  onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
+                />
+              </div>
+
               <div className="client-card-foot">
-                <span className="muted">Desde {c.since}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span className="muted">Desde:</span>
+                  <input 
+                    type="date" 
+                    className="inline-input muted" 
+                    value={c.since} 
+                    onChange={(e) => onUpdate({ ...c, since: e.target.value })} 
+                  />
+                </div>
                 <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
               </div>
             </div>
@@ -443,20 +541,20 @@
   }
 
   // FINANCEIRO COMPONENT
-  function Financeiro({ tx, onAdd, onRemove }) {
+  function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ type: "entrada", desc: "", amount: "", date: "2026-09-01", category: "" });
 
     const totals = useMemo(() => {
-      const entradas = tx.filter((t) => t.type === "entrada").reduce((s, t) => s + t.amount, 0);
-      const saidas = tx.filter((t) => t.type === "saida").reduce((s, t) => s + t.amount, 0);
+      const entradas = tx.filter((t) => t.type === "entrada").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+      const saidas = tx.filter((t) => t.type === "saida").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
       return { entradas, saidas, saldo: entradas - saidas };
     }, [tx]);
 
     const submit = (e) => {
       e.preventDefault();
       const amount = parseFloat(draft.amount);
-      if (!draft.desc || !amount) return;
+      if (!draft.desc || isNaN(amount)) return;
       onAdd({ ...draft, amount, id: uid("t") });
       setShowForm(false);
       setDraft({ type: "entrada", desc: "", amount: "", date: draft.date, category: "" });
@@ -497,12 +595,50 @@
             {tx.map((t) => (
               <div className="tx-row" key={t.id}>
                 <div className="tx-main">
-                  <strong>{t.desc}</strong>
-                  <span className="muted">{t.category || "Sem categoria"} · {t.date}</span>
+                  <input 
+                    className="inline-input" 
+                    style={{ fontWeight: "bold" }} 
+                    value={t.desc} 
+                    onChange={(e) => onUpdate({ ...t, desc: e.target.value })} 
+                  />
+                  <div className="tx-sub">
+                    <input 
+                      className="inline-input muted" 
+                      placeholder="Categoria"
+                      value={t.category} 
+                      onChange={(e) => onUpdate({ ...t, category: e.target.value })} 
+                    />
+                    <span className="muted">•</span>
+                    <input 
+                      type="date"
+                      className="inline-input muted" 
+                      value={t.date} 
+                      onChange={(e) => onUpdate({ ...t, date: e.target.value })} 
+                    />
+                  </div>
                 </div>
-                <span className={"tx-amount " + (t.type === "entrada" ? "up" : "down")}>
-                  {t.type === "entrada" ? "+" : "−"} {money(t.amount)}
-                </span>
+
+                <select 
+                  className="inline-select"
+                  value={t.type}
+                  onChange={(e) => onUpdate({ ...t, type: e.target.value })}
+                >
+                  <option value="entrada">Entrada (+)</option>
+                  <option value="saida">Saída (-)</option>
+                </select>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "2px", width: "110px" }}>
+                  <span className="muted">R$</span>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    className={"inline-input " + (t.type === "entrada" ? "up" : "down")}
+                    style={{ fontWeight: "bold", textAlign: "right" }}
+                    value={t.amount} 
+                    onChange={(e) => onUpdate({ ...t, amount: parseFloat(e.target.value) || 0 })} 
+                  />
+                </div>
+
                 <button className="icon-btn ghost" onClick={() => onRemove(t.id)}>🗑</button>
               </div>
             ))}
@@ -561,7 +697,7 @@
             <button className={"nav-item" + (tab === "financeiro" ? " active" : "")} onClick={() => setTab("financeiro")}>💼 Financeiro</button>
           </div>
           <div className="sidebar-foot">
-            <b>Nellus Coworking</b><br/>Painel Operacional v2.0
+            <b>Nellus Coworking - Gestão</b><br/>Painel Operacional v2.0
           </div>
         </div>
 
@@ -571,6 +707,7 @@
               bookings={bookings}
               clients={clients}
               onAdd={(b) => setBookings([...bookings, b])}
+              onUpdate={(updated) => setBookings(bookings.map(b => b.id === updated.id ? updated : b))}
               onRemove={(id) => setBookings(bookings.filter(b => b.id !== id))}
             />
           )}
@@ -580,6 +717,7 @@
               typeLabels={typeLabels}
               setTypeLabels={setTypeLabels}
               onAdd={(c) => setClients([...clients, c])}
+              onUpdate={(updated) => setClients(clients.map(c => c.id === updated.id ? updated : c))}
               onRemove={(id) => setClients(clients.filter(c => c.id !== id))}
             />
           )}
@@ -587,6 +725,7 @@
             <Financeiro
               tx={tx}
               onAdd={(t) => setTx([...tx, t])}
+              onUpdate={(updated) => setTx(tx.map(t => t.id === updated.id ? updated : t))}
               onRemove={(id) => setTx(tx.filter(t => t.id !== id))}
             />
           )}
