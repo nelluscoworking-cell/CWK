@@ -8,12 +8,10 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Recharts -->
-  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDK (Compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
@@ -50,7 +48,6 @@
     }
     .nellus-app * { box-sizing: border-box; }
 
-    /* Sidebar */
     .sidebar {
       background: linear-gradient(180deg, var(--teal-deep), #08392C 85%);
       color: #EFEAE0;
@@ -60,8 +57,8 @@
     }
     .brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 28px; }
     .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-    .brand-text b { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; letter-spacing: 0.2px; }
-    .brand-text span { font-size: 11.5px; color: #B9CFC5; letter-spacing: 0.3px; }
+    .brand-text b { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
+    .brand-text span { font-size: 11.5px; color: #B9CFC5; }
 
     .nav { display: flex; flex-direction: column; gap: 4px; }
     .nav-item {
@@ -80,7 +77,6 @@
     }
     .sidebar-foot b { color: #EFEAE0; font-size: 13px; }
 
-    /* Main Content */
     .main { padding: 28px 32px 32px; overflow-y: auto; }
     .view-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
     .view-head h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; margin: 0 0 4px; }
@@ -93,7 +89,6 @@
       background: var(--orange); color: #23140A; border: none;
       padding: 10px 16px; border-radius: 10px; font-family: inherit;
       font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
-      transition: background 0.15s ease, transform 0.1s ease;
       text-decoration: none;
     }
     .btn-primary:hover { background: var(--orange-deep); color: #fff; }
@@ -109,45 +104,21 @@
     .icon-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
     .icon-btn.ghost:hover { background: #F1ECE1; color: var(--down); }
 
-    /* Inline Edit Inputs */
     .inline-input {
-      border: 1px solid transparent;
-      background: transparent;
-      font-family: inherit;
-      font-size: inherit;
-      color: inherit;
-      padding: 3px 6px;
-      border-radius: 6px;
-      width: 100%;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
+      border: 1px solid transparent; background: transparent;
+      font-family: inherit; font-size: inherit; color: inherit;
+      padding: 3px 6px; border-radius: 6px; width: 100%;
     }
-    .inline-input:hover {
-      border-color: var(--border);
-      background: #FFFFFF;
-    }
-    .inline-input:focus {
-      border-color: var(--teal);
-      background: #FFFFFF;
-      outline: none;
-    }
+    .inline-input:hover { border-color: var(--border); background: #FFFFFF; }
+    .inline-input:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
 
     .inline-select {
-      border: 1px solid transparent;
-      background: transparent;
-      font-family: inherit;
-      font-size: inherit;
-      color: inherit;
-      padding: 3px 6px;
-      border-radius: 6px;
-      cursor: pointer;
+      border: 1px solid transparent; background: transparent;
+      font-family: inherit; font-size: inherit; color: inherit;
+      padding: 3px 6px; border-radius: 6px; cursor: pointer;
     }
-    .inline-select:hover, .inline-select:focus {
-      border-color: var(--teal);
-      background: #FFFFFF;
-      outline: none;
-    }
+    .inline-select:hover, .inline-select:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
 
-    /* Forms & Inputs */
     .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
     .field input, .field select {
       padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
@@ -166,7 +137,6 @@
     .radio-pill.active { background: var(--teal); color: #fff; border-color: var(--teal); }
     .radio-pill input { display: none; }
 
-    /* Modals */
     .modal-veil {
       position: fixed; inset: 0; background: rgba(0,0,0,0.4);
       display: flex; align-items: center; justify-content: center; z-index: 100;
@@ -178,7 +148,6 @@
     .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
 
-    /* Cards & Grids */
     .type-settings-bar {
       display: flex; gap: 12px; margin-bottom: 18px; padding: 12px;
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -196,7 +165,6 @@
     .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
-    /* Agenda */
     .date-rail { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
     .date-chip {
       border: 1px solid var(--border); background: var(--surface); color: var(--ink);
@@ -213,7 +181,6 @@
     .agenda-time input { padding: 2px 4px; font-size: 12.5px; }
     .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
 
-    /* Stats & Financial */
     .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -239,6 +206,7 @@
 
     .muted { color: var(--muted); font-size: 12px; }
     .empty-state { padding: 30px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
+    .sync-status { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.15); display: inline-block; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -248,26 +216,27 @@
 <script type="text/babel">
   const { useState, useEffect, useMemo } = React;
 
-  // ==========================================
-  // CONFIGURAÇÃO DO FIREBASE
-  // Cole suas credenciais do Firebase Console abaixo
-  // ==========================================
+  // -------------------------------------------------------------
+  // CONFIGURAÇÃO DO FIREBASE (Substitua pelos dados do seu Console)
+  // -------------------------------------------------------------
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO_ID",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_SENDER_ID",
-    appId: "SEU_APP_ID"
+    apiKey: "SUA_API_KEY_AQUI",
+    authDomain: "seu-projeto.firebaseapp.com",
+    projectId: "seu-projeto",
+    storageBucket: "seu-projeto.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcdef123456"
   };
 
-  // Inicializa o Firebase caso não esteja inicializado
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  // Inicializa o Firebase se tiver sido configurado
+  const isFirebaseActive = firebaseConfig.apiKey !== "SUA_API_KEY_AQUI";
+  let db = null;
+  if (isFirebaseActive) {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
   }
-  const db = firebase.firestore();
 
-  const money = (v) => (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   function Modal({ title, onClose, children }) {
     return (
@@ -305,7 +274,7 @@
         <div className="view-head">
           <div>
             <h2>Agenda</h2>
-            <p>Reservas de estações, salas e horários do coworking.</p>
+            <p>Reservas de estações, salas e horários sincronizados em nuvem.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
         </div>
@@ -401,7 +370,7 @@
 
     const submit = (e) => {
       e.preventDefault();
-      onAdd({ ...draft, since: new Date().toISOString().split('T')[0] });
+      onAdd({ ...draft, since: new Date().toISOString().slice(0, 10) });
       setShowForm(false);
       setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
     };
@@ -411,25 +380,24 @@
         <div className="view-head">
           <div>
             <h2>Clientes</h2>
-            <p>Gerenciamento de contratos e cadastros do coworking.</p>
+            <p>Gerenciamento de contratos e cadastros em tempo real.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
         </div>
 
-        {/* Nomes Editáveis dos Tipos de Plano */}
         <div className="type-settings-bar">
           <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Nomes dos Planos:</span>
           <div className="type-input-group">
             <span style={{ color: "#E08A52" }}>●</span>
-            <input value={typeLabels.presencial || ""} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
+            <input value={typeLabels.presencial} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
           </div>
           <div className="type-input-group">
             <span style={{ color: "#0E6E56" }}>●</span>
-            <input value={typeLabels.salaFixa || ""} onChange={(e) => setTypeLabels({ ...typeLabels, salaFixa: e.target.value })} />
+            <input value={typeLabels.salaFixa} onChange={(e) => setTypeLabels({ ...typeLabels, salaFixa: e.target.value })} />
           </div>
           <div className="type-input-group">
             <span style={{ color: "#3E7CB1" }}>●</span>
-            <input value={typeLabels.virtual || ""} onChange={(e) => setTypeLabels({ ...typeLabels, virtual: e.target.value })} />
+            <input value={typeLabels.virtual} onChange={(e) => setTypeLabels({ ...typeLabels, virtual: e.target.value })} />
           </div>
         </div>
 
@@ -512,9 +480,9 @@
         {showForm && (
           <Modal title="Novo cliente" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
-              <div className="field"><label>Nome / Razão social</label><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Opcional" /></div>
-              <div className="field"><label>CPF / CNPJ</label><input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} placeholder="Opcional" /></div>
-              <div className="field"><label>Endereço</label><input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="Opcional" /></div>
+              <div className="field"><label>Nome / Razão social</label><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required /></div>
+              <div className="field"><label>CPF / CNPJ</label><input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} /></div>
+              <div className="field"><label>Endereço</label><input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} /></div>
               <div className="field">
                 <label>Tipo de Contrato</label>
                 <div className="radio-row">
@@ -527,8 +495,8 @@
                 </div>
               </div>
               <div className="form-row">
-                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Opcional" /></div>
-                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Opcional" /></div>
+                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} /></div>
+                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} /></div>
               </div>
 
               <button className="btn-primary full" type="submit">Cadastrar Cliente</button>
@@ -564,11 +532,9 @@
         <div className="view-head">
           <div>
             <h2>Financeiro</h2>
-            <p>Acompanhamento de fluxo de caixa, relatórios e exportações.</p>
+            <p>Controle unificado de entradas e saídas.</p>
           </div>
-          <div className="btn-group">
-            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
-          </div>
+          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
         </div>
 
         <div className="stat-row">
@@ -667,67 +633,92 @@
     );
   }
 
-  // APP MAIN SHELL
+  // APP PRINCIPAL COM SINCRONIZAÇÃO NUVEM
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
     const [clients, setClients] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [tx, setTx] = useState([]);
-    const [typeLabels, setTypeLabelsState] = useState({
+    const [typeLabels, setTypeLabels] = useState({
       presencial: "Presencial",
       salaFixa: "Sala fixa",
       virtual: "Escritório virtual"
     });
 
-    // Sincronização em tempo real com Firestore
+    // Ouvintes em tempo real do Firestore
     useEffect(() => {
-      const unsubClients = db.collection("clients").onSnapshot((snap) => {
-        setClients(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      if (!isFirebaseActive) {
+        // Modo offline de contingência usando localStorage
+        const savedClients = localStorage.getItem("nellus_clients");
+        if (savedClients) setClients(JSON.parse(savedClients));
+        return;
+      }
+
+      const unsubClients = db.collection("clients").onSnapshot((snapshot) => {
+        setClients(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       });
 
-      const unsubBookings = db.collection("bookings").onSnapshot((snap) => {
-        setBookings(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      const unsubBookings = db.collection("bookings").onSnapshot((snapshot) => {
+        setBookings(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       });
 
-      const unsubTx = db.collection("transactions").onSnapshot((snap) => {
-        setTx(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      const unsubTx = db.collection("transactions").onSnapshot((snapshot) => {
+        setTx(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       });
 
-      const unsubSettings = db.collection("settings").doc("typeLabels").onSnapshot((doc) => {
-        if (doc.exists) {
-          setTypeLabelsState(doc.data());
-        }
+      const unsubConfig = db.collection("settings").doc("typeLabels").onSnapshot((doc) => {
+        if (doc.exists) setTypeLabels(doc.data());
       });
 
       return () => {
         unsubClients();
         unsubBookings();
         unsubTx();
-        unsubSettings();
+        unsubConfig();
       };
     }, []);
 
-    // Operações do Firestore
-    const addData = (col, item) => db.collection(col).add(item);
-    const updateData = (col, id, item) => db.collection(col).doc(id).update(item);
-    const removeData = (col, id) => db.collection(col).doc(id).delete();
+    // Operações em nuvem
+    const handleAdd = (collection, item) => {
+      if (isFirebaseActive) {
+        db.collection(collection).add(item);
+      } else {
+        alert("Para salvar para todos os usuários em tempo real, insira suas credenciais do Firebase no código!");
+      }
+    };
 
-    const setTypeLabels = (labels) => {
-      setTypeLabelsState(labels);
-      db.collection("settings").doc("typeLabels").set(labels);
+    const handleUpdate = (collection, id, data) => {
+      if (isFirebaseActive) {
+        db.collection(collection).doc(id).update(data);
+      }
+    };
+
+    const handleRemove = (collection, id) => {
+      if (isFirebaseActive) {
+        db.collection(collection).doc(id).delete();
+      }
+    };
+
+    const handleUpdateLabels = (newLabels) => {
+      setTypeLabels(newLabels);
+      if (isFirebaseActive) {
+        db.collection("settings").doc("typeLabels").set(newLabels, { merge: true });
+      }
     };
 
     return (
       <div className="nellus-app">
-        <div className="sidebar">
+        <aside className="sidebar">
           <div className="brand">
             <div className="brand-text">
               <b>Nellus Coworking</b>
-              <span>Painel de Gestão</span>
+              <span>Gestão Centralizada</span>
+              <span className="sync-status">
+                {isFirebaseActive ? "🟢 Sincronizado na Nuvem" : "⚠️ Modo Local (Configure o Firebase)"}
+              </span>
             </div>
           </div>
-
-          <div className="nav">
+          <nav className="nav">
             <button className={"nav-item" + (tab === "agenda" ? " active" : "")} onClick={() => setTab("agenda")}>
               📅 Agenda
             </button>
@@ -737,50 +728,47 @@
             <button className={"nav-item" + (tab === "financeiro" ? " active" : "")} onClick={() => setTab("financeiro")}>
               💳 Financeiro
             </button>
-          </div>
-
+          </nav>
           <div className="sidebar-foot">
-            <b>Nellus Coworking</b><br />
-            Sincronizado na Nuvem
+            <b>Painel Compartilhado</b><br />
+            As alterações são salvas e refletidas instantaneamente para qualquer pessoa conectada.
           </div>
-        </div>
+        </aside>
 
-        <div className="main">
+        <main className="main">
           {tab === "agenda" && (
-            <Agenda 
-              bookings={bookings} 
-              clients={clients} 
-              onAdd={(item) => addData("bookings", item)} 
-              onUpdate={(id, item) => updateData("bookings", id, item)} 
-              onRemove={(id) => removeData("bookings", id)} 
+            <Agenda
+              bookings={bookings}
+              clients={clients}
+              onAdd={(data) => handleAdd("bookings", data)}
+              onUpdate={(id, data) => handleUpdate("bookings", id, data)}
+              onRemove={(id) => handleRemove("bookings", id)}
             />
           )}
-
           {tab === "clientes" && (
-            <Clientes 
-              clients={clients} 
-              typeLabels={typeLabels} 
-              setTypeLabels={setTypeLabels} 
-              onAdd={(item) => addData("clients", item)} 
-              onUpdate={(id, item) => updateData("clients", id, item)} 
-              onRemove={(id) => removeData("clients", id)} 
+            <Clientes
+              clients={clients}
+              typeLabels={typeLabels}
+              setTypeLabels={handleUpdateLabels}
+              onAdd={(data) => handleAdd("clients", data)}
+              onUpdate={(id, data) => handleUpdate("clients", id, data)}
+              onRemove={(id) => handleRemove("clients", id)}
             />
           )}
-
           {tab === "financeiro" && (
-            <Financeiro 
-              tx={tx} 
-              onAdd={(item) => addData("transactions", item)} 
-              onUpdate={(id, item) => updateData("transactions", id, item)} 
-              onRemove={(id) => removeData("transactions", id)} 
+            <Financeiro
+              tx={tx}
+              onAdd={(data) => handleAdd("transactions", data)}
+              onUpdate={(id, data) => handleUpdate("transactions", id, data)}
+              onRemove={(id) => handleRemove("transactions", id)}
             />
           )}
-        </div>
+        </main>
       </div>
     );
   }
 
-  ReactDOM.render(<NellusApp />, document.getElementById("root"));
+  ReactDOM.createRoot(document.getElementById("root")).render(<NellusApp />);
 </script>
 
 </body>
