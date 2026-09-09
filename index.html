@@ -337,7 +337,9 @@
       return list;
     }, [currentMonth]);
 
-    const dayBookings = bookings.filter((b) => b.date === activeDate);
+    const dayBookings = bookings
+      .filter((b) => b.date === activeDate)
+      .sort((a, b) => (a.start || "").localeCompare(b.start || ""));
 
     const submit = (e) => {
       e.preventDefault();
