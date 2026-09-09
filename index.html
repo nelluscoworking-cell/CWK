@@ -198,15 +198,26 @@
       const date = new Date((excelValue - 25569) * 86400 * 1000);
       return date.toISOString().slice(0, 10);
     }
+    if (typeof excelValue === 'string') {
+        const parts = excelValue.split(" ");
+        if (parts[0].includes("-")) return parts[0];
+        if (parts[0].includes("/")) {
+            const d = parts[0].split("/");
+            if (d.length === 3) return `${d[2]}-${d[1]}-${d[0]}`;
+        }
+    }
     return String(excelValue);
   };
 
   const decimalToTime = (decimal) => {
-    if (typeof decimal !== 'number') return decimal;
-    const totalSeconds = Math.round(decimal * 86400);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    if (decimal == null || decimal === "") return "";
+    if (typeof decimal === 'number') {
+      const totalSeconds = Math.round(decimal * 86400);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+    return String(decimal);
   };
 
   function Modal({ title, onClose, children }) {
@@ -221,6 +232,40 @@
         </div>
       </div>
     );
+  }
+
+  // O RADAR: Função que desce lendo a planilha até achar os cabeçalhos verdadeiros
+  function extractDataFromSheet(ws, identifierKeywords) {
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    let headerIndex = -1;
+    let headers = [];
+    
+    for (let i = 0; i < Math.min(30, rows.length); i++) {
+      const rowArray = rows[i] || [];
+      const rowStr = rowArray.join(" ").toUpperCase();
+      if (identifierKeywords.some(kw => rowStr.includes(kw.toUpperCase()))) {
+        headerIndex = i;
+        headers = rowArray.map(h => String(h || "").trim().toUpperCase());
+        break;
+      }
+    }
+
+    if (headerIndex === -1) return [];
+
+    const data = [];
+    for (let i = headerIndex + 1; i < rows.length; i++) {
+      const rowArray = rows[i] || [];
+      if (rowArray.length === 0 || rowArray.every(cell => cell == null || String(cell).trim() === "")) continue;
+      
+      const obj = {};
+      headers.forEach((h, colIdx) => {
+        if (h) {
+          obj[h] = rowArray[colIdx] !== undefined ? rowArray[colIdx] : "";
+        }
+      });
+      data.push(obj);
+    }
+    return data;
   }
 
   // --- GERADOR GENÉRICO DE VIEWS ---
@@ -537,7 +582,6 @@
       return () => clearInterval(interval);
     }, []);
 
-    // Handlers Crud Genéricos
     const crudHandler = (stateSetter, collectionName) => ({
       add: (novo) => { stateSetter(prev => [...prev, novo]); enviarParaNuvem(collectionName, novo.id, novo); },
       update: (item) => { stateSetter(prev => prev.map(i => i.id === item.id ? item : i)); enviarParaNuvem(collectionName, item.id, item); },
@@ -549,7 +593,6 @@
     const hPresencial = crudHandler(setClientesPresencial, "clientesPresencial");
     const hVendas = crudHandler(setVendas, "vendas");
 
-    // IMPORTAÇÃO GLOBAL (Lê as abas específicas e pula os cabeçalhos)
     const handleGlobalImport = (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -561,17 +604,16 @@
         
         let cvCount = 0; let cpCount = 0; let vCount = 0;
 
-        // Escritório Virtual (Cabeçalho na linha 1 / Índice 0)
         if (workbook.SheetNames.includes("CLIENTES - Escritório Virtual")) {
            const ws = workbook.Sheets["CLIENTES - Escritório Virtual"];
-           const json = XLSX.utils.sheet_to_json(ws);
+           const json = extractDataFromSheet(ws, ["FORMA DE PAGAMENTO", "CLIENTE"]);
            json.forEach(row => {
                const id = uid("cv_");
                const item = {
                    id,
                    cliente: row["CLIENTE"] || "",
                    cpf: row["CPF"] || "",
-                   email: row["EMAIL"] || "",
+                   email: row["EMAIL"] || row["E-MAIL"] || "",
                    contato: row["CONTATO"] || "",
                    razaoSocial: row["RAZÃO SOCIAL"] || "",
                    cnpj: row["CNPJ"] || "",
@@ -585,11 +627,9 @@
            });
         }
 
-        // Clientes Presencial (Cabeçalho na linha 7 / Índice range: 6)
         if (workbook.SheetNames.includes("CLIENTES - Presencial")) {
            const ws = workbook.Sheets["CLIENTES - Presencial"];
-           // O range 6 faz o parser do excel pular as 6 primeiras linhas e usar a linha 7 como cabeçalho
-           const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
+           const json = extractDataFromSheet(ws, ["PORTE EMPRESARIAL", "CLIENTE/RESP. LEGAL"]);
            json.forEach(row => {
                const id = uid("cp_");
                const item = {
@@ -603,16 +643,16 @@
                    responsavel: row["CLIENTE/RESP. LEGAL"] || "",
                    atividade: row["ATIVIDADE"] || "",
                    telefone: row["TELEFONE"] || "",
-                   email: row["E-MAIL"] || "",
+                   email: row["E-MAIL"] || row["EMAIL"] || "",
                    logradouro: row["LOGRADOURO"] || "",
                    cep: row["CEP"] || "",
                    bairro: row["BAIRRO"] || "",
                    cidade: row["CIDADE"] || "",
                    uf: row["UF"] || "",
                    servico: row["SERVIÇO"] || "",
-                   inicio: parseExcelDate(row["INÍCIO"]),
-                   termino: parseExcelDate(row["TÉRMINO"]),
-                   contrato: row["Nº CONTRATO"] || ""
+                   inicio: parseExcelDate(row["INÍCIO"]) || parseExcelDate(row["INICIO"]),
+                   termino: parseExcelDate(row["TÉRMINO"]) || parseExcelDate(row["TERMINO"]),
+                   contrato: row["Nº CONTRATO"] || row["N° CONTRATO"] || ""
                };
                if (item.responsavel || item.razaoSocial) {
                  enviarParaNuvem("clientesPresencial", id, item);
@@ -621,11 +661,9 @@
            });
         }
 
-        // Vendas (Cabeçalho na linha 7 / Índice range: 6)
         if (workbook.SheetNames.includes("VENDAS")) {
            const ws = workbook.Sheets["VENDAS"];
-           // O range 6 faz o parser do excel pular as 6 primeiras linhas e usar a linha 7 como cabeçalho
-           const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
+           const json = extractDataFromSheet(ws, ["CLIENTE - CPF", "TIPO DE SERVIÇO"]);
            json.forEach(row => {
                const id = uid("v_");
                const item = {
@@ -635,9 +673,9 @@
                    clienteCnpj: row["CLIENTE - CNPJ"] || "",
                    contratacao: row["CONTRATAÇÃO"] || "",
                    tipoServico: row["TIPO DE SERVIÇO"] || "",
-                   preco: row["PREÇO"] || "",
-                   inicio: decimalToTime(row["INICIO"]) || "",
-                   termino: decimalToTime(row["TÉRMINO"]) || "",
+                   preco: row["PREÇO"] || row["PRECO"] || "",
+                   inicio: decimalToTime(row["INICIO"]) || decimalToTime(row["INÍCIO"]) || "",
+                   termino: decimalToTime(row["TÉRMINO"]) || decimalToTime(row["TERMINO"]) || "",
                    valorPagar: row["VALOR A PAGAR"] || "",
                    pagamento: row["PAGAMENTO"] || "",
                    banco: row["BANCO"] || ""
