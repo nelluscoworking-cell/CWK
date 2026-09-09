@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nellus Coworking - Gestão</title>
+  <title>Nellus Coworking - Gestão Integrada</title>
   
   <!-- React & Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -119,60 +119,34 @@
     .inline-input:hover { border-color: var(--border); background: #FFFFFF; }
     .inline-input:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
 
-    .inline-select {
-      border: 1px solid transparent; background: transparent;
-      font-family: inherit; font-size: inherit; color: inherit;
-      padding: 3px 6px; border-radius: 6px; cursor: pointer;
-    }
-    .inline-select:hover, .inline-select:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
-
     .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
     .field input, .field select {
       padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
-      font-family: inherit; font-size: 13.5px; outline: none; background: #fff;
+      font-family: inherit; font-size: 13.5px; outline: none; background: #fff; width: 100%;
     }
     .field input:focus, .field select:focus { border-color: var(--teal); }
-
-    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
-
-    .radio-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .radio-pill {
-      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
-      border-radius: 20px; border: 1px solid var(--border); font-size: 12.5px;
-      cursor: pointer; background: #fff; font-weight: 500;
-    }
-    .radio-pill.active { background: var(--teal); color: #fff; border-color: var(--teal); }
-    .radio-pill input { display: none; }
 
     .modal-veil {
       position: fixed; inset: 0; background: rgba(0,0,0,0.45);
       display: flex; align-items: center; justify-content: center; z-index: 100;
     }
     .modal {
-      background: var(--surface); border-radius: 14px; width: 100%; max-width: 500px;
+      background: var(--surface); border-radius: 14px; width: 100%; max-width: 600px;
       padding: 22px 24px; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,0.15);
       max-height: 90vh; overflow-y: auto;
     }
     .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
 
-    .type-settings-bar {
-      display: flex; gap: 12px; margin-bottom: 18px; padding: 12px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      align-items: center; flex-wrap: wrap;
-    }
-    .type-input-group { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
-    .type-input-group input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; }
-
-    .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
     .client-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 16px; display: flex; flex-direction: column; gap: 8px;
+      padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
     }
     .client-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .client-line { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
     .client-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11.5px; }
 
+    /* Agenda Styles */
     .agenda-month-picker {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
       background: var(--surface); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
@@ -182,11 +156,7 @@
     .agenda-month-picker input {
       border: 1px solid var(--border); padding: 5px 8px; border-radius: 6px; font-family: inherit; font-size: 13px;
     }
-    .date-rail-wrapper {
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 18px;
-    }
+    .date-rail-wrapper { overflow-x: auto; padding-bottom: 8px; margin-bottom: 18px; }
     .date-rail { display: flex; gap: 6px; flex-wrap: nowrap; min-width: max-content; }
     .date-chip {
       border: 1px solid var(--border); background: var(--surface); color: var(--ink);
@@ -204,57 +174,7 @@
       border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px;
     }
     .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); width: 175px; flex-shrink: 0; }
-    .agenda-time input { padding: 2px 4px; font-size: 12px; }
     .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
-
-    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .stat-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
-    }
-    .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; }
-    .stat-value { font-size: 20px; font-weight: 700; }
-    .stat-value.up { color: var(--up); }
-    .stat-value.down { color: var(--down); }
-
-    .financial-chart-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 20px;
-    }
-    .financial-status-tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
-    }
-    .financial-status-tag.positive { background: #E3F8EC; color: var(--up); border: 1px solid #B8ECCB; }
-    .financial-status-tag.negative { background: #FDEEEC; color: var(--down); border: 1px solid #F5C6C1; }
-
-    .progress-bar-container {
-      width: 100%;
-      height: 20px;
-      background: #EFEAE0;
-      border-radius: 10px;
-      overflow: hidden;
-      display: flex;
-      margin: 12px 0 8px;
-    }
-    .progress-bar-fill.in { background: var(--up); height: 100%; transition: width 0.3s ease; }
-    .progress-bar-fill.out { background: var(--down); height: 100%; transition: width 0.3s ease; }
-
-    .tx-panel {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 18px; margin-bottom: 20px;
-    }
-    .chart-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .chart-panel-head h3 { margin: 0; font-family: 'Fraunces', serif; font-size: 18px; }
-
-    .tx-list { display: flex; flex-direction: column; gap: 8px; }
-    .tx-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .tx-row:last-child { border-bottom: none; }
-    .tx-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
-    .tx-sub { display: flex; gap: 8px; align-items: center; }
 
     .muted { color: var(--muted); font-size: 12px; }
     .empty-state { padding: 30px; text-align: center; color: var(--muted); background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
@@ -268,37 +188,28 @@
 <script type="text/babel">
   const { useState, useEffect, useMemo, useRef } = React;
 
-  // Endpoint REST direto do Firebase do projeto nellus-gestao
   const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
 
-  const formatBRL = (val) => {
-    return Number(val || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
-
-  const maskMoneyInput = (rawString) => {
-    const digits = String(rawString || "").replace(/\D/g, "");
-    if (!digits) return "";
-    const amount = Number(digits) / 100;
-    return amount.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2
-    });
-  };
-
-  const parseMoneyToFloat = (maskedValue) => {
-    if (typeof maskedValue === "number") return maskedValue;
-    const digits = String(maskedValue || "").replace(/\D/g, "");
-    if (!digits) return 0;
-    return parseFloat((Number(digits) / 100).toFixed(2));
-  };
-
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
+
+  // Função para converter data do Excel (número de série) para "YYYY-MM-DD"
+  const parseExcelDate = (excelValue) => {
+    if (!excelValue) return "";
+    if (typeof excelValue === 'number') {
+      const date = new Date((excelValue - 25569) * 86400 * 1000);
+      return date.toISOString().slice(0, 10);
+    }
+    return excelValue;
+  };
+
+  // Função para converter hora decimal do Excel para "HH:MM"
+  const decimalToTime = (decimal) => {
+    if (typeof decimal !== 'number') return decimal;
+    const totalSeconds = Math.round(decimal * 86400);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
 
   function Modal({ title, onClose, children }) {
     return (
@@ -314,13 +225,141 @@
     );
   }
 
+  // --- GERADOR GENÉRICO DE VIEWS (FORMULÁRIOS DINÂMICOS BASEADOS NO EXCEL) ---
+  function GenericView({ title, description, data, fields, onAdd, onUpdate, onRemove }) {
+     const [showForm, setShowForm] = useState(false);
+     const [editingId, setEditingId] = useState(null);
+     const [draft, setDraft] = useState({});
+
+     const openNew = () => { setDraft({}); setEditingId(null); setShowForm(true); };
+     const openEdit = (item) => { setDraft(item); setEditingId(item.id); setShowForm(true); };
+
+     const submit = (e) => {
+        e.preventDefault();
+        if (editingId) onUpdate(draft);
+        else onAdd({ ...draft, id: uid("g_") });
+        setShowForm(false);
+     };
+
+     const exportXLS = () => {
+        const exportData = data.map(item => {
+           let row = {};
+           fields.forEach(f => { row[f.label] = item[f.name] || ""; });
+           return row;
+        });
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 30));
+        XLSX.writeFile(wb, `${title}_Nellus.xlsx`);
+     };
+
+     return (
+        <div className="view">
+          <div className="view-head">
+            <div>
+              <h2>{title} ({data.length})</h2>
+              <p>{description}</p>
+            </div>
+            <div className="btn-group">
+              <button className="btn-primary outline" onClick={exportXLS}>📥 Exportar XLS</button>
+              <button className="btn-primary" onClick={openNew}>+ Novo Registro</button>
+            </div>
+          </div>
+
+          <div className="client-grid">
+             {data.length === 0 && <div className="empty-state">Nenhum registro encontrado.</div>}
+             {data.map(item => (
+                <div className="client-card" key={item.id}>
+                   <div className="client-card-top" style={{flexDirection:'column'}}>
+                      <strong style={{fontSize: '15px'}}>{item[fields[0].name] || "Registro sem nome"}</strong>
+                      <span className="muted">{item[fields[1].name] || ""}</span>
+                   </div>
+                   <div className="client-card-foot" style={{marginTop: '12px'}}>
+                      <button className="btn-primary secondary" style={{padding:'4px 10px', fontSize:'11px'}} onClick={() => openEdit(item)}>Editar Detalhes</button>
+                      <button className="icon-btn ghost" onClick={() => { if(window.confirm("Deseja realmente remover?")) onRemove(item.id); }}>🗑</button>
+                   </div>
+                </div>
+             ))}
+          </div>
+
+          {showForm && (
+            <Modal title={editingId ? "Editar Registro" : "Novo Registro"} onClose={() => setShowForm(false)}>
+              <form onSubmit={submit}>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom: '16px'}}>
+                   {fields.map(f => (
+                      <div className="field" key={f.name} style={f.fullWidth ? {gridColumn: '1 / -1'} : {}}>
+                         <label>{f.label}</label>
+                         <input 
+                           type={f.type || "text"} 
+                           value={draft[f.name] || ""} 
+                           onChange={(e) => setDraft({...draft, [f.name]: e.target.value})} 
+                           placeholder={f.placeholder || ""}
+                         />
+                      </div>
+                   ))}
+                </div>
+                <button className="btn-primary full" type="submit">Salvar</button>
+              </form>
+            </Modal>
+          )}
+        </div>
+     );
+  }
+
+  // --- CONFIGURAÇÃO DAS COLUNAS (IDÊNTICO À PLANILHA) ---
+  const virtualFields = [
+    { name: 'cliente', label: 'CLIENTE', fullWidth: true },
+    { name: 'cpf', label: 'CPF' },
+    { name: 'cnpj', label: 'CNPJ' },
+    { name: 'razaoSocial', label: 'RAZÃO SOCIAL', fullWidth: true },
+    { name: 'email', label: 'EMAIL' },
+    { name: 'contato', label: 'CONTATO (Telefone)' },
+    { name: 'dataEntrada', label: 'DATA DE ENTRADA', type: 'date' },
+    { name: 'formaPagamento', label: 'FORMA DE PAGAMENTO' },
+  ];
+
+  const presencialFields = [
+    { name: 'razaoSocial', label: 'RAZÃO SOCIAL', fullWidth: true },
+    { name: 'cnpj', label: 'CNPJ' },
+    { name: 'porte', label: 'PORTE EMPRESARIAL' },
+    { name: 'responsavel', label: 'CLIENTE/RESP. LEGAL', fullWidth: true },
+    { name: 'cpf', label: 'CPF' },
+    { name: 'rg', label: 'RG' },
+    { name: 'dataNascimento', label: 'DATA NASCIMENTO', type: 'date' },
+    { name: 'atividade', label: 'ATIVIDADE', fullWidth: true },
+    { name: 'telefone', label: 'TELEFONE' },
+    { name: 'email', label: 'E-MAIL' },
+    { name: 'cep', label: 'CEP' },
+    { name: 'logradouro', label: 'LOGRADOURO', fullWidth: true },
+    { name: 'bairro', label: 'BAIRRO' },
+    { name: 'cidade', label: 'CIDADE' },
+    { name: 'uf', label: 'UF' },
+    { name: 'servico', label: 'SERVIÇO' },
+    { name: 'contrato', label: 'Nº CONTRATO' },
+    { name: 'inicio', label: 'INÍCIO', type: 'date' },
+    { name: 'termino', label: 'TÉRMINO', type: 'date' },
+  ];
+
+  const vendasFields = [
+    { name: 'data', label: 'DATA', type: 'date', fullWidth: true },
+    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', fullWidth: true },
+    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', fullWidth: true },
+    { name: 'contratacao', label: 'CONTRATAÇÃO (Ex: Avulsa)' },
+    { name: 'tipoServico', label: 'TIPO DE SERVIÇO' },
+    { name: 'preco', label: 'PREÇO (R$)' },
+    { name: 'valorPagar', label: 'VALOR A PAGAR (R$)' },
+    { name: 'inicio', label: 'INICIO', type: 'time' },
+    { name: 'termino', label: 'TÉRMINO', type: 'time' },
+    { name: 'pagamento', label: 'PAGAMENTO' },
+    { name: 'banco', label: 'BANCO' },
+  ];
+
   // --- AGENDA ---
-  function Agenda({ bookings, clients, onAdd, onUpdate, onRemove }) {
+  function Agenda({ bookings, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
     const [activeDate, setActiveDate] = useState(todayStr);
     const [showForm, setShowForm] = useState(false);
-    const [isCustom, setIsCustom] = useState(false);
     const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", notes: "" });
 
     const daysInMonth = useMemo(() => {
@@ -346,54 +385,6 @@
       if (!draft.clientName || !draft.room) return;
       onAdd({ ...draft, id: uid("b_") });
       setShowForm(false);
-      setDraft({ clientName: "", date: draft.date, start: "09:00", end: "10:00", room: "", notes: "" });
-    };
-
-    const exportAgendaXLS = () => {
-      const data = bookings.map((b) => ({
-        "Data": b.date.split("-").reverse().join("/"),
-        "Início": b.start || "",
-        "Fim": b.end || "",
-        "Cliente": b.clientName || "",
-        "Espaço / Sala": b.room || "",
-        "Observações": b.notes || ""
-      }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Agenda");
-      XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
-    };
-
-    const exportAgendaPDF = () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
-
-      const tableData = bookings
-        .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
-        .map((b) => [
-          b.date.split("-").reverse().join("/"),
-          `${b.start || ""} - ${b.end || ""}`,
-          b.clientName || "",
-          b.room || "",
-          b.notes || ""
-        ]);
-
-      doc.autoTable({
-        head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Observações"]],
-        body: tableData,
-        startY: 30,
-        theme: 'striped',
-        headStyles: { fillColor: [14, 110, 86] },
-        styles: { fontSize: 9, font: 'helvetica' }
-      });
-
-      doc.save(`Agenda_Nellus_${currentMonth}.pdf`);
     };
 
     return (
@@ -404,8 +395,6 @@
             <p>Reservas centralizadas com visualização do mês inteiro.</p>
           </div>
           <div className="btn-group">
-            <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
-            <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
             <button className="btn-primary" onClick={() => {
               setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", notes: "" });
               setShowForm(true);
@@ -452,9 +441,9 @@
             <div className="agenda-row" key={b.id}>
               <div className="agenda-time">
                 <span>⏱</span>
-                <input type="time" className="inline-input" value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto'}} value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
                 <span>–</span>
-                <input type="time" className="inline-input" value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto'}} value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
               </div>
               <div className="agenda-main">
                 <input 
@@ -488,32 +477,15 @@
             <form onSubmit={submit}>
               <div className="field">
                 <label>Cliente</label>
-                {!isCustom ? (
-                  <select value={draft.clientName} onChange={(e) => {
-                    if (e.target.value === "NEW") { setIsCustom(true); setDraft({ ...draft, clientName: "" }); }
-                    else setDraft({ ...draft, clientName: e.target.value });
-                  }}>
-                    <option value="">Selecione um cliente...</option>
-                    {clients.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    <option value="NEW">+ Inserir cliente avulso</option>
-                  </select>
-                ) : (
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <input placeholder="Nome do cliente avulso..." value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} style={{ flex: 1 }} />
-                    <button type="button" className="btn-primary secondary" onClick={() => setIsCustom(false)}>Lista</button>
-                  </div>
-                )}
+                <input value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Nome do cliente" required autoFocus />
               </div>
-
               <div className="form-row">
                 <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
                 <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
                 <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
               </div>
-
-              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Sala de Reunião, Estação 3" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} /></div>
+              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Sala de Reunião, Estação 3" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required /></div>
               <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
-
               <button className="btn-primary full" type="submit">Salvar Agendamento</button>
             </form>
           </Modal>
@@ -522,47 +494,65 @@
     );
   }
 
-  // --- CLIENTES ---
-  function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
-    const [showForm, setShowForm] = useState(false);
-    const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
-    const fileInputRef = useRef(null);
+  // --- COMPONENTE PRINCIPAL ---
+  function NellusApp() {
+    const [tab, setTab] = useState("agenda");
+    const [statusMsg, setStatusMsg] = useState("Conectando...");
+    const globalImportRef = useRef(null);
+    
+    const [bookings, setBookings] = useState(() => { try { return JSON.parse(localStorage.getItem("nellus_bookings") || "[]"); } catch(e) { return []; } });
+    const [clientesVirtual, setClientesVirtual] = useState([]);
+    const [clientesPresencial, setClientesPresencial] = useState([]);
+    const [vendas, setVendas] = useState([]);
 
-    const submit = (e) => {
-      e.preventDefault();
-      if (!draft.name.trim()) return;
-
-      const novoCliente = {
-        ...draft,
-        id: uid("c_"),
-        since: new Date().toISOString().slice(0, 10)
-      };
-
-      onAdd(novoCliente);
-      setShowForm(false);
-      setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
+    const buscarDadosDaNuvem = async () => {
+      try {
+        const res = await fetch(`${DB_BASE_URL}.json`);
+        if (!res.ok) { setStatusMsg("⚠️ Erro de Permissão"); return; }
+        const data = await res.json();
+        if (data) {
+          if (data.bookings) {
+            const list = Object.values(data.bookings);
+            setBookings(list);
+            localStorage.setItem("nellus_bookings", JSON.stringify(list));
+          }
+          if (data.clientesVirtual) setClientesVirtual(Object.values(data.clientesVirtual));
+          if (data.clientesPresencial) setClientesPresencial(Object.values(data.clientesPresencial));
+          if (data.vendas) setVendas(Object.values(data.vendas));
+        }
+        setStatusMsg("🟢 Nuvem Conectada");
+      } catch (err) { setStatusMsg("⚠️ Verifique a conexão"); }
     };
 
-    // NOVA FUNÇÃO: Exportar Clientes para XLS
-    const exportClientesXLS = () => {
-      const data = clients.map((c) => ({
-        "Nome / Razão Social": c.name || "",
-        "CPF / CNPJ": c.document || "",
-        "Endereço": c.address || "",
-        "Tipo de Contrato": typeLabels[c.type] || c.type || "",
-        "Telefone": c.phone || "",
-        "E-mail": c.email || "",
-        "Cliente Desde": c.since ? c.since.split("-").reverse().join("/") : ""
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-      XLSX.writeFile(wb, `Clientes_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const enviarParaNuvem = async (caminho, id, dados) => {
+      setStatusMsg("⏳ Salvando...");
+      try {
+        if (dados === null) await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "DELETE" });
+        else await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
+        setStatusMsg("🟢 Salvo na Nuvem");
+      } catch (err) { setStatusMsg("⚠️ Erro ao salvar"); }
     };
 
-    // NOVA FUNÇÃO: Importar Clientes de um XLS
-    const importClientesXLS = (e) => {
+    useEffect(() => {
+      buscarDadosDaNuvem();
+      const interval = setInterval(buscarDadosDaNuvem, 5000);
+      return () => clearInterval(interval);
+    }, []);
+
+    // Handlers Crud Genéricos
+    const crudHandler = (stateSetter, collectionName) => ({
+      add: (novo) => { stateSetter(prev => [...prev, novo]); enviarParaNuvem(collectionName, novo.id, novo); },
+      update: (item) => { stateSetter(prev => prev.map(i => i.id === item.id ? item : i)); enviarParaNuvem(collectionName, item.id, item); },
+      remove: (id) => { stateSetter(prev => prev.filter(i => i.id !== id)); enviarParaNuvem(collectionName, id, null); }
+    });
+
+    const hBookings = crudHandler(setBookings, "bookings");
+    const hVirtual = crudHandler(setClientesVirtual, "clientesVirtual");
+    const hPresencial = crudHandler(setClientesPresencial, "clientesPresencial");
+    const hVendas = crudHandler(setVendas, "vendas");
+
+    // IMPORTAÇÃO GLOBAL (Lê as abas específicas e pula os cabeçalhos)
+    const handleGlobalImport = (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
@@ -570,591 +560,99 @@
       reader.onload = (evt) => {
         const data = new Uint8Array(evt.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(worksheet);
+        
+        let cvCount = 0; let cpCount = 0; let vCount = 0;
 
-        json.forEach(row => {
-          const novoCliente = {
-            id: uid("c_"),
-            name: row["Nome / Razão Social"] || row["Nome"] || row["name"] || "",
-            document: row["CPF / CNPJ"] || row["CPF"] || row["CNPJ"] || "",
-            address: row["Endereço"] || row["address"] || "",
-            type: "presencial", // fallback padrão
-            phone: row["Telefone"] || row["phone"] || "",
-            email: row["E-mail"] || row["Email"] || row["email"] || "",
-            since: row["Cliente Desde"] 
-              ? row["Cliente Desde"].split("/").reverse().join("-") 
-              : new Date().toISOString().slice(0, 10)
-          };
+        // Escritório Virtual (Cabeçalho na linha 1 / Índice 0)
+        if (workbook.SheetNames.includes("CLIENTES - Escritório Virtual")) {
+           const ws = workbook.Sheets["CLIENTES - Escritório Virtual"];
+           const json = XLSX.utils.sheet_to_json(ws);
+           json.forEach(row => {
+               const id = uid("cv_");
+               const item = {
+                   id,
+                   cliente: row["CLIENTE"] || "",
+                   cpf: row["CPF"] || "",
+                   email: row["EMAIL"] || "",
+                   contato: row["CONTATO"] || "",
+                   razaoSocial: row["RAZÃO SOCIAL"] || "",
+                   cnpj: row["CNPJ"] || "",
+                   dataEntrada: parseExcelDate(row["DATA DE ENTRADA"]),
+                   formaPagamento: row["FORMA DE PAGAMENTO"] || ""
+               };
+               if (item.cliente || item.razaoSocial) {
+                 enviarParaNuvem("clientesVirtual", id, item);
+                 cvCount++;
+               }
+           });
+        }
 
-          if (novoCliente.name) {
-            onAdd(novoCliente);
-          }
-        });
+        // Clientes Presencial (Cabeçalho na linha 7 / Índice range: 6)
+        if (workbook.SheetNames.includes("CLIENTES - Presencial")) {
+           const ws = workbook.Sheets["CLIENTES - Presencial"];
+           const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
+           json.forEach(row => {
+               const id = uid("cp_");
+               const item = {
+                   id,
+                   cnpj: row["CNPJ"] || "",
+                   razaoSocial: row["RAZÃO SOCIAL"] || "",
+                   porte: row["PORTE EMPRESARIAL"] || "",
+                   cpf: row["CPF"] || "",
+                   rg: row["RG"] || "",
+                   dataNascimento: parseExcelDate(row["DATA NASCIMENTO"]),
+                   responsavel: row["CLIENTE/RESP. LEGAL"] || "",
+                   atividade: row["ATIVIDADE"] || "",
+                   telefone: row["TELEFONE"] || "",
+                   email: row["E-MAIL"] || "",
+                   logradouro: row["LOGRADOURO"] || "",
+                   cep: row["CEP"] || "",
+                   bairro: row["BAIRRO"] || "",
+                   cidade: row["CIDADE"] || "",
+                   uf: row["UF"] || "",
+                   servico: row["SERVIÇO"] || "",
+                   inicio: parseExcelDate(row["INÍCIO"]),
+                   termino: parseExcelDate(row["TÉRMINO"]),
+                   contrato: row["Nº CONTRATO"] || ""
+               };
+               if (item.razaoSocial || item.responsavel) {
+                 enviarParaNuvem("clientesPresencial", id, item);
+                 cpCount++;
+               }
+           });
+        }
 
-        alert("Clientes importados com sucesso!");
-        e.target.value = null; // Reseta o input para permitir importar o mesmo arquivo novamente, se necessário
+        // Vendas (Cabeçalho na linha 7 / Índice range: 6)
+        if (workbook.SheetNames.includes("VENDAS")) {
+           const ws = workbook.Sheets["VENDAS"];
+           const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
+           json.forEach(row => {
+               const id = uid("v_");
+               const item = {
+                   id,
+                   data: parseExcelDate(row["DATA"]),
+                   clienteCpf: row["CLIENTE - CPF"] || "",
+                   clienteCnpj: row["CLIENTE - CNPJ"] || "",
+                   contratacao: row["CONTRATAÇÃO"] || "",
+                   tipoServico: row["TIPO DE SERVIÇO"] || "",
+                   preco: row["PREÇO"] || "",
+                   inicio: decimalToTime(row["INICIO"]) || "",
+                   termino: decimalToTime(row["TÉRMINO"]) || "",
+                   valorPagar: row["VALOR A PAGAR"] || "",
+                   pagamento: row["PAGAMENTO"] || "",
+                   banco: row["BANCO"] || ""
+               };
+               if (item.data || item.clienteCpf || item.tipoServico) {
+                 enviarParaNuvem("vendas", id, item);
+                 vCount++;
+               }
+           });
+        }
+
+        alert(`Iniciando envio para a nuvem:\n\n- ${cvCount} Clientes Virtuais\n- ${cpCount} Clientes Presenciais\n- ${vCount} Vendas\n\nA página será recarregada automaticamente em 3 segundos para exibir os dados.`);
+        setTimeout(() => window.location.reload(), 3000);
       };
       reader.readAsArrayBuffer(file);
-    };
-
-    return (
-      <div className="view">
-        <div className="view-head">
-          <div>
-            <h2>Clientes ({clients.length})</h2>
-            <p>Gerenciamento de contratos com salvamento centralizado na nuvem.</p>
-          </div>
-          <div className="btn-group">
-            <input type="file" accept=".xlsx, .xls" style={{display: "none"}} ref={fileInputRef} onChange={importClientesXLS} />
-            <button className="btn-primary outline" onClick={() => fileInputRef.current.click()}>📤 Importar</button>
-            <button className="btn-primary outline" onClick={exportClientesXLS}>📥 Exportar</button>
-            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
-          </div>
-        </div>
-
-        <div className="type-settings-bar">
-          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: "bold" }}>Planos:</span>
-          <div className="type-input-group">
-            <span style={{ color: "#E08A52" }}>●</span>
-            <input value={typeLabels.presencial} onChange={(e) => setTypeLabels({ ...typeLabels, presencial: e.target.value })} />
-          </div>
-          <div className="type-input-group">
-            <span style={{ color: "#0E6E56" }}>●</span>
-            <input value={typeLabels.salaFixa} onChange={(e) => setTypeLabels({ ...typeLabels, salaFixa: e.target.value })} />
-          </div>
-          <div className="type-input-group">
-            <span style={{ color: "#3E7CB1" }}>●</span>
-            <input value={typeLabels.virtual} onChange={(e) => setTypeLabels({ ...typeLabels, virtual: e.target.value })} />
-          </div>
-        </div>
-
-        {clients.length === 0 ? (
-          <div className="empty-state">Nenhum cliente cadastrado ainda. Clique no botão acima para adicionar.</div>
-        ) : (
-          <div className="client-grid">
-            {clients.map((c) => (
-              <div className="client-card" key={c.id}>
-                <div className="client-card-top">
-                  <div style={{ flex: 1 }}>
-                    <input 
-                      className="inline-input" 
-                      style={{ fontWeight: "bold", fontSize: "15px" }} 
-                      value={c.name || ""} 
-                      placeholder="Nome do cliente" 
-                      onChange={(e) => onUpdate({ ...c, name: e.target.value })} 
-                    />
-                    <input 
-                      className="inline-input muted" 
-                      value={c.document || ""} 
-                      placeholder="CPF / CNPJ" 
-                      onChange={(e) => onUpdate({ ...c, document: e.target.value })} 
-                    />
-                  </div>
-                  <select 
-                    className="inline-select" 
-                    value={c.type || "presencial"} 
-                    onChange={(e) => onUpdate({ ...c, type: e.target.value })}
-                  >
-                    <option value="presencial">{typeLabels.presencial}</option>
-                    <option value="salaFixa">{typeLabels.salaFixa}</option>
-                    <option value="virtual">{typeLabels.virtual}</option>
-                  </select>
-                </div>
-
-                <div className="client-line">
-                  <span>📍</span>
-                  <input 
-                    className="inline-input" 
-                    value={c.address || ""} 
-                    placeholder="Endereço" 
-                    onChange={(e) => onUpdate({ ...c, address: e.target.value })} 
-                  />
-                </div>
-
-                <div className="client-line">
-                  <span>📞</span>
-                  <input 
-                    className="inline-input" 
-                    value={c.phone || ""} 
-                    placeholder="Telefone" 
-                    onChange={(e) => onUpdate({ ...c, phone: e.target.value })} 
-                  />
-                </div>
-
-                <div className="client-line">
-                  <span>✉️</span>
-                  <input 
-                    className="inline-input" 
-                    value={c.email || ""} 
-                    placeholder="E-mail" 
-                    onChange={(e) => onUpdate({ ...c, email: e.target.value })} 
-                  />
-                </div>
-
-                <div className="client-card-foot">
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <span className="muted">Desde:</span>
-                    <input 
-                      type="date" 
-                      className="inline-input muted" 
-                      value={c.since || ""} 
-                      onChange={(e) => onUpdate({ ...c, since: e.target.value })} 
-                    />
-                  </div>
-                  <button className="icon-btn ghost" onClick={() => onRemove(c.id)}>🗑</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showForm && (
-          <Modal title="Novo cliente" onClose={() => setShowForm(false)}>
-            <form onSubmit={submit}>
-              <div className="field">
-                <label>Nome / Razão social *</label>
-                <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Ex.: Maria Souza" required autoFocus />
-              </div>
-              <div className="field">
-                <label>CPF / CNPJ</label>
-                <input value={draft.document} onChange={(e) => setDraft({ ...draft, document: e.target.value })} placeholder="000.000.000-00" />
-              </div>
-              <div className="field">
-                <label>Endereço</label>
-                <input value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} placeholder="Rua, número, bairro" />
-              </div>
-              <div className="field">
-                <label>Tipo de Contrato</label>
-                <div className="radio-row">
-                  {Object.keys(typeLabels).map((t) => (
-                    <label key={t} className={"radio-pill" + (draft.type === t ? " active" : "")}>
-                      <input type="radio" checked={draft.type === t} onChange={() => setDraft({ ...draft, type: t })} />
-                      {typeLabels[t]}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="field"><label>Telefone</label><input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="(24) 99999-9999" /></div>
-                <div className="field"><label>E-mail</label><input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="cliente@email.com" /></div>
-              </div>
-              <button className="btn-primary full" type="submit">Cadastrar Cliente</button>
-            </form>
-          </Modal>
-        )}
-      </div>
-    );
-  }
-
-  // --- FINANCEIRO COM MÁSCARA, GRÁFICO E EXPORTAÇÕES ---
-  function Financeiro({ tx, onAdd, onUpdate, onRemove }) {
-    const [showForm, setShowForm] = useState(false);
-    const [draft, setDraft] = useState({ 
-      type: "entrada", 
-      desc: "", 
-      maskedAmount: "", 
-      date: new Date().toISOString().slice(0, 10), 
-      category: "" 
-    });
-
-    const totals = useMemo(() => {
-      const entradas = tx.filter((t) => t.type === "entrada").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
-      const saidas = tx.filter((t) => t.type === "saida").reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
-      const saldo = entradas - saidas;
-      const totalVolume = entradas + saidas;
-      const percentEntradas = totalVolume > 0 ? (entradas / totalVolume) * 100 : 50;
-      const percentSaidas = totalVolume > 0 ? (saidas / totalVolume) * 100 : 50;
-      return { entradas, saidas, saldo, percentEntradas, percentSaidas, isPositivo: saldo >= 0 };
-    }, [tx]);
-
-    const submit = (e) => {
-      e.preventDefault();
-      const amount = parseMoneyToFloat(draft.maskedAmount);
-      if (!draft.desc || isNaN(amount) || amount <= 0) return;
-      onAdd({ 
-        type: draft.type, 
-        desc: draft.desc, 
-        amount: amount, 
-        date: draft.date, 
-        category: draft.category, 
-        id: uid("t_") 
-      });
-      setShowForm(false);
-      setDraft({ type: "entrada", desc: "", maskedAmount: "", date: draft.date, category: "" });
-    };
-
-    const exportFinanceiroXLS = () => {
-      const data = tx.map((t) => ({
-        "Data": t.date ? t.date.split("-").reverse().join("/") : "",
-        "Descrição": t.desc || "",
-        "Categoria": t.category || "",
-        "Tipo": t.type === "entrada" ? "Receita (+)" : "Despesa (-)",
-        "Valor (R$)": parseFloat(t.amount || 0)
-      }));
-
-      data.push({});
-      data.push({ "Descrição": "Total de Entradas", "Valor (R$)": totals.entradas });
-      data.push({ "Descrição": "Total de Saídas", "Valor (R$)": totals.saidas });
-      data.push({ "Descrição": "Saldo Acumulado", "Valor (R$)": totals.saldo });
-
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Financeiro");
-      XLSX.writeFile(wb, `Financeiro_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    };
-
-    const exportFinanceiroPDF = () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Nellus Coworking - Relatório Financeiro", 14, 18);
-      
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
-      doc.text(`Resumo: Entradas ${formatBRL(totals.entradas)} | Saídas ${formatBRL(totals.saidas)} | Saldo: ${formatBRL(totals.saldo)} (${totals.isPositivo ? "POSITIVO" : "NEGATIVO"})`, 14, 31);
-
-      const tableData = tx
-        .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-        .map((t) => [
-          t.date ? t.date.split("-").reverse().join("/") : "",
-          t.desc || "",
-          t.category || "",
-          t.type === "entrada" ? "Entrada (+)" : "Saída (-)",
-          formatBRL(t.amount)
-        ]);
-
-      doc.autoTable({
-        head: [["Data", "Descrição", "Categoria", "Tipo", "Valor"]],
-        body: tableData,
-        startY: 36,
-        theme: 'striped',
-        headStyles: { fillColor: [14, 110, 86] },
-        styles: { fontSize: 9, font: 'helvetica' }
-      });
-
-      doc.save(`Financeiro_Nellus_${new Date().toISOString().slice(0, 10)}.pdf`);
-    };
-
-    return (
-      <div className="view">
-        <div className="view-head">
-          <div>
-            <h2>Financeiro ({tx.length})</h2>
-            <p>Controle financeiro e fluxo de caixa.</p>
-          </div>
-          <div className="btn-group">
-            <button className="btn-primary outline" onClick={exportFinanceiroXLS}>📥 XLS</button>
-            <button className="btn-primary outline" onClick={exportFinanceiroPDF}>📄 PDF</button>
-            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo lançamento</button>
-          </div>
-        </div>
-
-        <div className="stat-row">
-          <div className="stat-card">
-            <span className="stat-label">Entradas</span>
-            <strong className="stat-value up">{formatBRL(totals.entradas)}</strong>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">Saídas</span>
-            <strong className="stat-value down">{formatBRL(totals.saidas)}</strong>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">Saldo Acumulado</span>
-            <strong className={"stat-value " + (totals.isPositivo ? "up" : "down")}>{formatBRL(totals.saldo)}</strong>
-          </div>
-        </div>
-
-        <div className="financial-chart-panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", fontWeight: "bold" }}>Saúde Financeira</span>
-              <h3 style={{ margin: "2px 0 0", fontFamily: "'Fraunces', serif" }}>Distribuição do Resultado</h3>
-            </div>
-            <span className={`financial-status-tag ${totals.isPositivo ? "positive" : "negative"}`}>
-              {totals.isPositivo ? "● SALDO POSITIVO" : "● SALDO NEGATIVO"}
-            </span>
-          </div>
-
-          <div className="progress-bar-container">
-            <div className="progress-bar-fill in" style={{ width: `${totals.percentEntradas}%` }} />
-            <div className="progress-bar-fill out" style={{ width: `${totals.percentSaidas}%` }} />
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--muted)" }}>
-            <span>Receitas: {totals.percentEntradas.toFixed(1)}%</span>
-            <span>Despesas: {totals.percentSaidas.toFixed(1)}%</span>
-          </div>
-        </div>
-
-        <div className="tx-panel">
-          <div className="chart-panel-head">
-            <h3>Lançamentos</h3>
-          </div>
-          <div className="tx-list">
-            {tx.length === 0 && <div className="empty-state">Nenhum lançamento registrado.</div>}
-            {tx.map((t) => (
-              <div className="tx-row" key={t.id}>
-                <div className="tx-main">
-                  <input 
-                    className="inline-input" 
-                    style={{ fontWeight: "bold" }} 
-                    value={t.desc || ""} 
-                    onChange={(e) => onUpdate({ ...t, desc: e.target.value })} 
-                  />
-                  <div className="tx-sub">
-                    <input 
-                      className="inline-input muted" 
-                      placeholder="Categoria" 
-                      value={t.category || ""} 
-                      onChange={(e) => onUpdate({ ...t, category: e.target.value })} 
-                    />
-                    <span className="muted">•</span>
-                    <input 
-                      type="date" 
-                      className="inline-input muted" 
-                      value={t.date || ""} 
-                      onChange={(e) => onUpdate({ ...t, date: e.target.value })} 
-                    />
-                  </div>
-                </div>
-
-                <select 
-                  className="inline-select" 
-                  value={t.type || "entrada"} 
-                  onChange={(e) => onUpdate({ ...t, type: e.target.value })}
-                >
-                  <option value="entrada">Entrada (+)</option>
-                  <option value="saida">Saída (-)</option>
-                </select>
-
-                <div style={{ width: "130px", textAlign: "right" }}>
-                  <input 
-                    type="text"
-                    className={"inline-input " + (t.type === "entrada" ? "up" : "down")}
-                    style={{ fontWeight: "bold", textAlign: "right" }}
-                    value={formatBRL(t.amount)} 
-                    onChange={(e) => {
-                      const num = parseMoneyToFloat(e.target.value);
-                      onUpdate({ ...t, amount: num });
-                    }} 
-                  />
-                </div>
-
-                <button className="icon-btn ghost" onClick={() => onRemove(t.id)}>🗑</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {showForm && (
-          <Modal title="Novo lançamento" onClose={() => setShowForm(false)}>
-            <form onSubmit={submit}>
-              <div className="radio-row">
-                <label className={"radio-pill" + (draft.type === "entrada" ? " active" : "")}>
-                  <input type="radio" checked={draft.type === "entrada"} onChange={() => setDraft({ ...draft, type: "entrada" })} /> Entrada
-                </label>
-                <label className={"radio-pill" + (draft.type === "saida" ? " active" : "")}>
-                  <input type="radio" checked={draft.type === "saida"} onChange={() => setDraft({ ...draft, type: "saida" })} /> Saída
-                </label>
-              </div>
-              <div className="field">
-                <label>Descrição *</label>
-                <input value={draft.desc} onChange={(e) => setDraft({ ...draft, desc: e.target.value })} required autoFocus />
-              </div>
-              <div className="form-row">
-                <div className="field">
-                  <label>Valor (R$) *</label>
-                  <input 
-                    type="text" 
-                    placeholder="R$ 0,00"
-                    value={draft.maskedAmount} 
-                    onChange={(e) => setDraft({ ...draft, maskedAmount: maskMoneyInput(e.target.value) })} 
-                    required 
-                  />
-                </div>
-                <div className="field">
-                  <label>Data</label>
-                  <input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
-                </div>
-              </div>
-              <div className="field">
-                <label>Categoria</label>
-                <input value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} placeholder="Ex.: Mensalidade, Internet, Manutenção" />
-              </div>
-              <button className="btn-primary full" type="submit">Salvar Lançamento</button>
-            </form>
-          </Modal>
-        )}
-      </div>
-    );
-  }
-
-  // --- COMPONENTE PRINCIPAL (SINCRONIZAÇÃO REST DIRETA) ---
-  function NellusApp() {
-    const [tab, setTab] = useState("clientes");
-    const [statusMsg, setStatusMsg] = useState("Conectando...");
-    
-    const [clients, setClients] = useState(() => {
-      try { return JSON.parse(localStorage.getItem("nellus_clients") || "[]"); } catch(e) { return []; }
-    });
-    const [bookings, setBookings] = useState(() => {
-      try { return JSON.parse(localStorage.getItem("nellus_bookings") || "[]"); } catch(e) { return []; }
-    });
-    const [tx, setTx] = useState(() => {
-      try { return JSON.parse(localStorage.getItem("nellus_tx") || "[]"); } catch(e) { return []; }
-    });
-    const [typeLabels, setTypeLabels] = useState(() => {
-      try {
-        return JSON.parse(localStorage.getItem("nellus_labels") || '{"presencial":"Presencial","salaFixa":"Sala fixa","virtual":"Escritório virtual"}');
-      } catch(e) {
-        return { presencial: "Presencial", salaFixa: "Sala fixa", virtual: "Escritório virtual" };
-      }
-    });
-
-    // Função de sincronização com o banco pela API REST do Firebase
-    const buscarDadosDaNuvem = async () => {
-      try {
-        const res = await fetch(`${DB_BASE_URL}.json`);
-        if (!res.ok) {
-          setStatusMsg("⚠️ Libere as Regras no Firebase");
-          return;
-        }
-        const data = await res.json();
-        if (data) {
-          if (data.clients) {
-            const list = Object.values(data.clients);
-            setClients(list);
-            localStorage.setItem("nellus_clients", JSON.stringify(list));
-          }
-          if (data.bookings) {
-            const list = Object.values(data.bookings);
-            setBookings(list);
-            localStorage.setItem("nellus_bookings", JSON.stringify(list));
-          }
-          if (data.tx) {
-            const list = Object.values(data.tx);
-            setTx(list);
-            localStorage.setItem("nellus_tx", JSON.stringify(list));
-          }
-          if (data.typeLabels) {
-            setTypeLabels(data.typeLabels);
-            localStorage.setItem("nellus_labels", JSON.stringify(data.typeLabels));
-          }
-        }
-        setStatusMsg("🟢 Nuvem Conectada");
-      } catch (err) {
-        console.error("Erro na busca REST:", err);
-        setStatusMsg("⚠️ Verifique a conexão");
-      }
-    };
-
-    // Enviar dados para o banco
-    const enviarParaNuvem = async (caminho, id, dados) => {
-      setStatusMsg("⏳ Salvando...");
-      try {
-        if (dados === null) {
-          await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "DELETE" });
-        } else {
-          await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dados)
-          });
-        }
-        setStatusMsg("🟢 Salvo na Nuvem");
-      } catch (err) {
-        console.error("Erro ao salvar:", err);
-        setStatusMsg("⚠️ Erro ao salvar na Nuvem");
-      }
-    };
-
-    // Busca automática e polling para sincronizar entre aparelhos
-    useEffect(() => {
-      buscarDadosDaNuvem();
-      const interval = setInterval(buscarDadosDaNuvem, 4000);
-      return () => clearInterval(interval);
-    }, []);
-
-    // Handlers Clientes
-    const handleAddClient = (novo) => {
-      const atualizados = [...clients, novo];
-      setClients(atualizados);
-      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      enviarParaNuvem("clients", novo.id, novo);
-    };
-
-    const handleUpdateClient = (item) => {
-      const atualizados = clients.map((c) => (c.id === item.id ? item : c));
-      setClients(atualizados);
-      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      enviarParaNuvem("clients", item.id, item);
-    };
-
-    const handleRemoveClient = (id) => {
-      const atualizados = clients.filter((c) => c.id !== id);
-      setClients(atualizados);
-      localStorage.setItem("nellus_clients", JSON.stringify(atualizados));
-      enviarParaNuvem("clients", id, null);
-    };
-
-    // Handlers Agenda
-    const handleAddBooking = (novo) => {
-      const atualizados = [...bookings, novo];
-      setBookings(atualizados);
-      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      enviarParaNuvem("bookings", novo.id, novo);
-    };
-
-    const handleUpdateBooking = (item) => {
-      const atualizados = bookings.map((b) => (b.id === item.id ? item : b));
-      setBookings(atualizados);
-      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      enviarParaNuvem("bookings", item.id, item);
-    };
-
-    const handleRemoveBooking = (id) => {
-      const atualizados = bookings.filter((b) => b.id !== id);
-      setBookings(atualizados);
-      localStorage.setItem("nellus_bookings", JSON.stringify(atualizados));
-      enviarParaNuvem("bookings", id, null);
-    };
-
-    // Handlers Financeiro
-    const handleAddTx = (novo) => {
-      const atualizados = [...tx, novo];
-      setTx(atualizados);
-      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      enviarParaNuvem("tx", novo.id, novo);
-    };
-
-    const handleUpdateTx = (item) => {
-      const atualizados = tx.map((t) => (t.id === item.id ? item : t));
-      setTx(atualizados);
-      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      enviarParaNuvem("tx", item.id, item);
-    };
-
-    const handleRemoveTx = (id) => {
-      const atualizados = tx.filter((t) => t.id !== id);
-      setTx(atualizados);
-      localStorage.setItem("nellus_tx", JSON.stringify(atualizados));
-      enviarParaNuvem("tx", id, null);
-    };
-
-    const handleUpdateLabels = async (labels) => {
-      setTypeLabels(labels);
-      localStorage.setItem("nellus_labels", JSON.stringify(labels));
-      try {
-        await fetch(`${DB_BASE_URL}/typeLabels.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(labels)
-        });
-      } catch(e) {}
     };
 
     return (
@@ -1171,46 +669,54 @@
             <button className={"nav-item" + (tab === "agenda" ? " active" : "")} onClick={() => setTab("agenda")}>
               📅 Agenda
             </button>
-            <button className={"nav-item" + (tab === "clientes" ? " active" : "")} onClick={() => setTab("clientes")}>
-              👥 Clientes
+            <button className={"nav-item" + (tab === "virtual" ? " active" : "")} onClick={() => setTab("virtual")}>
+              💻 Escritório Virtual
             </button>
-            <button className={"nav-item" + (tab === "financeiro" ? " active" : "")} onClick={() => setTab("financeiro")}>
-              💳 Financeiro
+            <button className={"nav-item" + (tab === "presencial" ? " active" : "")} onClick={() => setTab("presencial")}>
+              🏢 Cliente Presencial
+            </button>
+            <button className={"nav-item" + (tab === "vendas" ? " active" : "")} onClick={() => setTab("vendas")}>
+              💰 Vendas
+            </button>
+            
+            <input type="file" accept=".xlsx, .xls" style={{display: "none"}} ref={globalImportRef} onChange={handleGlobalImport} />
+            <button className="nav-item" onClick={() => globalImportRef.current.click()} style={{marginTop: '24px', background: 'rgba(255,255,255,0.1)', color: '#fff'}}>
+              📥 Importar Planilha Completa
             </button>
           </nav>
           <div className="sidebar-foot">
             <b>Vercel + Firebase</b><br />
-            Dados sincronizados em tempo real para múltiplos usuários pelo link.
+            Estrutura espelhada do Excel.
           </div>
         </aside>
 
         <main className="main">
           {tab === "agenda" && (
-            <Agenda
-              bookings={bookings}
-              clients={clients}
-              onAdd={handleAddBooking}
-              onUpdate={handleUpdateBooking}
-              onRemove={handleRemoveBooking}
-            />
+            <Agenda bookings={bookings} onAdd={hBookings.add} onUpdate={hBookings.update} onRemove={hBookings.remove} />
           )}
-          {tab === "clientes" && (
-            <Clientes
-              clients={clients}
-              typeLabels={typeLabels}
-              setTypeLabels={handleUpdateLabels}
-              onAdd={handleAddClient}
-              onUpdate={handleUpdateClient}
-              onRemove={handleRemoveClient}
-            />
+          {tab === "virtual" && (
+             <GenericView 
+                title="Escritório Virtual" 
+                description="Gestão de clientes da aba Escritório Virtual."
+                data={clientesVirtual} fields={virtualFields}
+                onAdd={hVirtual.add} onUpdate={hVirtual.update} onRemove={hVirtual.remove} 
+             />
           )}
-          {tab === "financeiro" && (
-            <Financeiro
-              tx={tx}
-              onAdd={handleAddTx}
-              onUpdate={handleUpdateTx}
-              onRemove={handleRemoveTx}
-            />
+          {tab === "presencial" && (
+             <GenericView 
+                title="Clientes Presenciais" 
+                description="Gestão completa com todos os dados contratuais."
+                data={clientesPresencial} fields={presencialFields}
+                onAdd={hPresencial.add} onUpdate={hPresencial.update} onRemove={hPresencial.remove} 
+             />
+          )}
+          {tab === "vendas" && (
+             <GenericView 
+                title="Vendas" 
+                description="Controle de vendas, horas avulsas e faturamento."
+                data={vendas} fields={vendasFields}
+                onAdd={hVendas.add} onUpdate={hVendas.update} onRemove={hVendas.remove} 
+             />
           )}
         </main>
       </div>
