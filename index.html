@@ -539,6 +539,24 @@
       setDraft({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
     };
 
+    // NOVA FUNÇÃO: Exportar Clientes para XLS
+    const exportClientesXLS = () => {
+      const data = clients.map((c) => ({
+        "Nome / Razão Social": c.name || "",
+        "CPF / CNPJ": c.document || "",
+        "Endereço": c.address || "",
+        "Tipo de Contrato": typeLabels[c.type] || c.type || "",
+        "Telefone": c.phone || "",
+        "E-mail": c.email || "",
+        "Cliente Desde": c.since ? c.since.split("-").reverse().join("/") : ""
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+      XLSX.writeFile(wb, `Clientes_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    };
+
     return (
       <div className="view">
         <div className="view-head">
@@ -546,7 +564,10 @@
             <h2>Clientes ({clients.length})</h2>
             <p>Gerenciamento de contratos com salvamento centralizado na nuvem.</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
+          <div className="btn-group">
+            <button className="btn-primary outline" onClick={exportClientesXLS}>📥 XLS</button>
+            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
+          </div>
         </div>
 
         <div className="type-settings-bar">
