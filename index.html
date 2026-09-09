@@ -192,17 +192,15 @@
 
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
 
-  // Função para converter data do Excel (número de série) para "YYYY-MM-DD"
   const parseExcelDate = (excelValue) => {
     if (!excelValue) return "";
     if (typeof excelValue === 'number') {
       const date = new Date((excelValue - 25569) * 86400 * 1000);
       return date.toISOString().slice(0, 10);
     }
-    return excelValue;
+    return String(excelValue);
   };
 
-  // Função para converter hora decimal do Excel para "HH:MM"
   const decimalToTime = (decimal) => {
     if (typeof decimal !== 'number') return decimal;
     const totalSeconds = Math.round(decimal * 86400);
@@ -225,7 +223,7 @@
     );
   }
 
-  // --- GERADOR GENÉRICO DE VIEWS (FORMULÁRIOS DINÂMICOS BASEADOS NO EXCEL) ---
+  // --- GERADOR GENÉRICO DE VIEWS ---
   function GenericView({ title, description, data, fields, onAdd, onUpdate, onRemove }) {
      const [showForm, setShowForm] = useState(false);
      const [editingId, setEditingId] = useState(null);
@@ -306,7 +304,7 @@
      );
   }
 
-  // --- CONFIGURAÇÃO DAS COLUNAS (IDÊNTICO À PLANILHA) ---
+  // --- CONFIGURAÇÃO DAS COLUNAS ---
   const virtualFields = [
     { name: 'cliente', label: 'CLIENTE', fullWidth: true },
     { name: 'cpf', label: 'CPF' },
@@ -319,10 +317,10 @@
   ];
 
   const presencialFields = [
+    { name: 'responsavel', label: 'CLIENTE/RESP. LEGAL', fullWidth: true },
     { name: 'razaoSocial', label: 'RAZÃO SOCIAL', fullWidth: true },
     { name: 'cnpj', label: 'CNPJ' },
     { name: 'porte', label: 'PORTE EMPRESARIAL' },
-    { name: 'responsavel', label: 'CLIENTE/RESP. LEGAL', fullWidth: true },
     { name: 'cpf', label: 'CPF' },
     { name: 'rg', label: 'RG' },
     { name: 'dataNascimento', label: 'DATA NASCIMENTO', type: 'date' },
@@ -341,8 +339,8 @@
   ];
 
   const vendasFields = [
-    { name: 'data', label: 'DATA', type: 'date', fullWidth: true },
     { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', fullWidth: true },
+    { name: 'data', label: 'DATA', type: 'date' },
     { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', fullWidth: true },
     { name: 'contratacao', label: 'CONTRATAÇÃO (Ex: Avulsa)' },
     { name: 'tipoServico', label: 'TIPO DE SERVIÇO' },
@@ -590,6 +588,7 @@
         // Clientes Presencial (Cabeçalho na linha 7 / Índice range: 6)
         if (workbook.SheetNames.includes("CLIENTES - Presencial")) {
            const ws = workbook.Sheets["CLIENTES - Presencial"];
+           // O range 6 faz o parser do excel pular as 6 primeiras linhas e usar a linha 7 como cabeçalho
            const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
            json.forEach(row => {
                const id = uid("cp_");
@@ -615,7 +614,7 @@
                    termino: parseExcelDate(row["TÉRMINO"]),
                    contrato: row["Nº CONTRATO"] || ""
                };
-               if (item.razaoSocial || item.responsavel) {
+               if (item.responsavel || item.razaoSocial) {
                  enviarParaNuvem("clientesPresencial", id, item);
                  cpCount++;
                }
@@ -625,6 +624,7 @@
         // Vendas (Cabeçalho na linha 7 / Índice range: 6)
         if (workbook.SheetNames.includes("VENDAS")) {
            const ws = workbook.Sheets["VENDAS"];
+           // O range 6 faz o parser do excel pular as 6 primeiras linhas e usar a linha 7 como cabeçalho
            const json = XLSX.utils.sheet_to_json(ws, { range: 6 });
            json.forEach(row => {
                const id = uid("v_");
