@@ -406,7 +406,10 @@
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
             <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
-            <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo agendamento</button>
+            <button className="btn-primary" onClick={() => {
+              setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", notes: "" });
+              setShowForm(true);
+            }}>+ Novo agendamento</button>
           </div>
         </div>
 
