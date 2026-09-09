@@ -523,6 +523,7 @@
   function Clientes({ clients, typeLabels, setTypeLabels, onAdd, onUpdate, onRemove }) {
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState({ name: "", document: "", address: "", type: "presencial", phone: "", email: "" });
+    const fileInputRef = useRef(null);
 
     const submit = (e) => {
       e.preventDefault();
@@ -557,6 +558,44 @@
       XLSX.writeFile(wb, `Clientes_Nellus_${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
+    // NOVA FUNÇÃO: Importar Clientes de um XLS
+    const importClientesXLS = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet);
+
+        json.forEach(row => {
+          const novoCliente = {
+            id: uid("c_"),
+            name: row["Nome / Razão Social"] || row["Nome"] || row["name"] || "",
+            document: row["CPF / CNPJ"] || row["CPF"] || row["CNPJ"] || "",
+            address: row["Endereço"] || row["address"] || "",
+            type: "presencial", // fallback padrão
+            phone: row["Telefone"] || row["phone"] || "",
+            email: row["E-mail"] || row["Email"] || row["email"] || "",
+            since: row["Cliente Desde"] 
+              ? row["Cliente Desde"].split("/").reverse().join("-") 
+              : new Date().toISOString().slice(0, 10)
+          };
+
+          if (novoCliente.name) {
+            onAdd(novoCliente);
+          }
+        });
+
+        alert("Clientes importados com sucesso!");
+        e.target.value = null; // Reseta o input para permitir importar o mesmo arquivo novamente, se necessário
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
     return (
       <div className="view">
         <div className="view-head">
@@ -565,7 +604,9 @@
             <p>Gerenciamento de contratos com salvamento centralizado na nuvem.</p>
           </div>
           <div className="btn-group">
-            <button className="btn-primary outline" onClick={exportClientesXLS}>📥 XLS</button>
+            <input type="file" accept=".xlsx, .xls" style={{display: "none"}} ref={fileInputRef} onChange={importClientesXLS} />
+            <button className="btn-primary outline" onClick={() => fileInputRef.current.click()}>📤 Importar</button>
+            <button className="btn-primary outline" onClick={exportClientesXLS}>📥 Exportar</button>
             <button className="btn-primary" onClick={() => setShowForm(true)}>+ Novo cliente</button>
           </div>
         </div>
@@ -1135,8 +1176,8 @@
             </button>
           </nav>
           <div className="sidebar-foot">
-            <b>Nellus Gestão</b><br />
-            Sincronização em tempo real via nuvem.
+            <b>Vercel + Firebase</b><br />
+            Dados sincronizados em tempo real para múltiplos usuários pelo link.
           </div>
         </aside>
 
