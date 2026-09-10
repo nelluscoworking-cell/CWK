@@ -494,7 +494,7 @@
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
     const [activeDate, setActiveDate] = useState(todayStr);
     const [showForm, setShowForm] = useState(false);
-    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", price: "", notes: "" });
+    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", price: "", total: "", notes: "" });
 
     const daysInMonth = useMemo(() => {
       const [year, month] = currentMonth.split("-").map(Number);
@@ -509,11 +509,46 @@
 
     const dayBookings = bookings.filter((b) => b.date === activeDate).sort((a, b) => (a.start || "").localeCompare(b.start || ""));
 
-    const submit = (e) => { e.preventDefault(); if (!draft.clientName || !draft.room) return; onAdd({ ...draft, id: uid("b_") }); setShowForm(false); };
+    // Lógica para Cálculo Automático na Lista de Agenda
+    const handleAgendaUpdate = (b, field, val) => {
+        let updated = { ...b, [field]: val };
+        if (field === 'start' || field === 'end' || field === 'price') {
+            if (updated.start && updated.end && updated.price) {
+                const diff = calculateTimeDiff(updated.start, updated.end);
+                const priceFloat = parseCurrencyToFloat(updated.price);
+                updated.total = formatFloatToCurrency(diff.decimalHours * priceFloat);
+            } else {
+                updated.total = "";
+            }
+        }
+        onUpdate(updated);
+    };
+
+    // Lógica para Cálculo Automático no Formulário de Novo Agendamento
+    const updateDraft = (field, val) => {
+         let nextDraft = { ...draft, [field]: val };
+         if (field === 'start' || field === 'end' || field === 'price') {
+             if (nextDraft.start && nextDraft.end && nextDraft.price) {
+                 const diff = calculateTimeDiff(nextDraft.start, nextDraft.end);
+                 const priceFloat = parseCurrencyToFloat(nextDraft.price);
+                 nextDraft.total = formatFloatToCurrency(diff.decimalHours * priceFloat);
+             } else {
+                 nextDraft.total = "";
+             }
+         }
+         setDraft(nextDraft);
+    };
+
+    const submit = (e) => { 
+        e.preventDefault(); 
+        if (!draft.clientName || !draft.room) return; 
+        onAdd({ ...draft, id: uid("b_") }); 
+        setShowForm(false); 
+    };
 
     const exportAgendaXLS = () => {
       if (!window.XLSX) return alert("Ferramenta de exportação carregando, aguarde um segundo.");
-      const data = bookings.map((b) => ({ "Data": b.date.split("-").reverse().join("/"), "Início": b.start || "", "Fim": b.end || "", "Cliente": b.clientName || "", "Espaço / Sala": b.room || "", "Valor": b.price || "", "Observações": b.notes || "" }));
+      const data = bookings.map((b) => ({ "Data": b.date.split("-").reverse().join("/"), "Início": b.start || "", "Fim": b.end || "", "Cliente": b.clientName || "", "Espaço / Sala": b.room || "", "Valor/h": b.price || "", "Total": b.total || "", "Observações": b.notes || "" }));
       const ws = window.XLSX.utils.json_to_sheet(data); const wb = window.XLSX.utils.book_new(); window.XLSX.utils.book_append_sheet(wb, ws, "Agenda"); window.XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
     };
 
@@ -522,8 +557,8 @@
       const { jsPDF } = window.jspdf; const doc = new jsPDF();
       doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
       doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
-      const tableData = bookings.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)).map((b) => [ b.date.split("-").reverse().join("/"), `${b.start || ""} - ${b.end || ""}`, b.clientName || "", b.room || "", b.price || "", b.notes || "" ]);
-      doc.autoTable({ head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Valor", "Observações"]], body: tableData, startY: 30, theme: 'striped', headStyles: { fillColor: [14, 110, 86] }, styles: { fontSize: 9, font: 'helvetica' } });
+      const tableData = bookings.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)).map((b) => [ b.date.split("-").reverse().join("/"), `${b.start || ""} - ${b.end || ""}`, b.clientName || "", b.room || "", b.price || "", b.total || "", b.notes || "" ]);
+      doc.autoTable({ head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Valor/h", "Total", "Observações"]], body: tableData, startY: 30, theme: 'striped', headStyles: { fillColor: [14, 110, 86] }, styles: { fontSize: 9, font: 'helvetica' } });
       doc.save(`Agenda_Nellus_${currentMonth}.pdf`);
     };
 
@@ -534,7 +569,7 @@
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
             <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
-            <button className="btn-primary" onClick={() => { setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", price: "", notes: "" }); setShowForm(true); }}>+ Novo agendamento rápido</button>
+            <button className="btn-primary" onClick={() => { setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", price: "", total: "", notes: "" }); setShowForm(true); }}>+ Novo agendamento rápido</button>
           </div>
         </div>
 
@@ -563,20 +598,23 @@
             <div className="agenda-row" key={b.id}>
               <div className="agenda-time">
                 <span>⏱</span>
-                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.start || ""} onChange={(e) => handleAgendaUpdate(b, 'start', e.target.value)} />
                 <span>–</span>
-                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.end || ""} onChange={(e) => handleAgendaUpdate(b, 'end', e.target.value)} />
               </div>
               <div className="agenda-main">
-                <input className="inline-input" style={{ fontWeight: "bold", fontSize: "14px" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
+                <input className="inline-input" style={{ fontWeight: "bold", fontSize: "14px" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => handleAgendaUpdate(b, 'clientName', e.target.value)} />
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <select className="inline-select muted" style={{width: 'auto'}} value={b.room || ""} onChange={(e) => onUpdate({ ...b, room: e.target.value })}>
+                  <select className="inline-select muted" style={{width: 'auto'}} value={b.room || ""} onChange={(e) => handleAgendaUpdate(b, 'room', e.target.value)}>
                     <option value="">Selecione o espaço...</option><option value="Sala privativa 01">Sala privativa 01</option><option value="Sala privativa 02">Sala privativa 02</option><option value="Estação de trabalho">Estação de trabalho</option><option value="Visita">Visita</option>
                   </select>
-                  <select className="inline-select" style={{width: 'auto', fontWeight: 'bold', color: 'var(--ink)'}} value={b.price || ""} onChange={(e) => onUpdate({ ...b, price: e.target.value })}>
-                    <option value="">Valor...</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
+                  <select className="inline-select" style={{width: 'auto', fontWeight: 'bold', color: 'var(--ink)'}} value={b.price || ""} onChange={(e) => handleAgendaUpdate(b, 'price', e.target.value)}>
+                    <option value="">Valor/h...</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
                   </select>
-                  <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => onUpdate({ ...b, notes: e.target.value })} />
+                  {/* Novo Campo de Total */}
+                  <input className="inline-input" style={{width: '95px', fontWeight: 'bold', backgroundColor: '#F9F9F9', color: 'var(--teal-deep)'}} placeholder="Total..." value={b.total || ""} readOnly title="Calculado automaticamente" />
+                  
+                  <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => handleAgendaUpdate(b, 'notes', e.target.value)} />
                 </div>
               </div>
               <button className="icon-btn ghost" onClick={() => onRemoveBatch([b.id], bookings)}>🗑</button>
@@ -587,27 +625,31 @@
         {showForm && (
           <Modal title="Novo agendamento" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
-              <div className="field"><label>Cliente</label><input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Digite para buscar..." required autoFocus /></div>
+              <div className="field"><label>Cliente</label><input list="client-list" value={draft.clientName} onChange={(e) => updateDraft('clientName', e.target.value)} placeholder="Digite para buscar..." required autoFocus /></div>
               <div className="form-row">
-                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
-                <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
-                <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
+                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => updateDraft('date', e.target.value)} /></div>
+                <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => updateDraft('start', e.target.value)} /></div>
+                <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => updateDraft('end', e.target.value)} /></div>
               </div>
               <div className="form-row">
                 <div className="field">
                   <label>Espaço / Sala</label>
-                  <select value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required>
+                  <select value={draft.room} onChange={(e) => updateDraft('room', e.target.value)} required>
                     <option value="">Selecione...</option><option value="Sala privativa 01">Sala privativa 01</option><option value="Sala privativa 02">Sala privativa 02</option><option value="Estação de trabalho">Estação de trabalho</option><option value="Visita">Visita</option>
                   </select>
                 </div>
                 <div className="field">
-                  <label>Valor do Serviço</label>
-                  <select style={{fontWeight: 'bold'}} value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })}>
+                  <label>Valor / Hora</label>
+                  <select style={{fontWeight: 'bold'}} value={draft.price} onChange={(e) => updateDraft('price', e.target.value)}>
                     <option value="">Sem valor</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
                   </select>
                 </div>
+                <div className="field">
+                  <label>Total (Auto)</label>
+                  <input value={draft.total || ""} placeholder="R$ 0,00" readOnly style={{backgroundColor: '#F9F9F9', fontWeight: 'bold'}} />
+                </div>
               </div>
-              <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
+              <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => updateDraft('notes', e.target.value)} /></div>
               <button className="btn-primary full" type="submit">Salvar Agendamento</button>
             </form>
           </Modal>
