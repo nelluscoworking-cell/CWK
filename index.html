@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nellus Coworking - Gestão Integrada</title>
   
-  <!-- React & Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- React & Babel (Versões Otimizadas para Produção) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Bibliotecas de Exportação XLS e PDF -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <!-- Bibliotecas de Exportação XLS e PDF (Carregamento em Segundo Plano "defer") -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
@@ -204,7 +204,7 @@
 
     .sync-status { font-size: 11px; padding: 4px 9px; border-radius: 12px; background: rgba(255,255,255,0.18); display: inline-block; margin-top: 6px; font-weight: 600; }
     
-    /* Tela de Login */
+    /* Tela de Login & Loading Inicial */
     .login-container {
       display: flex; align-items: center; justify-content: center; 
       min-height: 100vh; background: var(--teal-deep); padding: 20px;
@@ -213,11 +213,29 @@
       background: var(--surface); padding: 40px; border-radius: 20px; 
       width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
+
+    .initial-loader {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100vh; background-color: var(--teal-deep); color: #EFEAE0; width: 100vw; position: fixed; top: 0; left: 0;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: var(--orange); border-radius: 50%;
+      animation: spin 1s linear infinite; margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<div id="root"></div>
+<div id="root">
+  <!-- Tela de carregamento enquanto o React é processado -->
+  <div class="initial-loader">
+    <div class="spinner"></div>
+    <h2 style="font-family: 'Fraunces', serif; margin: 0; font-size: 24px;">Nellus Coworking</h2>
+    <p style="font-size: 14px; color: #9FC2B2; margin-top: 8px;">Carregando sistema...</p>
+  </div>
+</div>
 
 <script type="text/babel">
   const { useState, useEffect, useMemo, useRef } = React;
@@ -226,7 +244,6 @@
   const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
   const FIREBASE_API_KEY = "AIzaSyCNv8l0xRgtoQX7q_UZQYspHASugTpr3BE";
 
-  // Nova função de UID que ajuda a ordenar por data de criação
   function uid(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   function Modal({ title, onClose, children }) {
@@ -299,9 +316,8 @@
     };
   };
 
-  // --- Extração de dados da planilha ---
   function extractDataFromSheet(ws, identifierKeywords) {
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1 });
     let headerIndex = -1;
     let headers = [];
     for (let i = 0; i < Math.min(30, rows.length); i++) {
@@ -328,7 +344,6 @@
     return data;
   }
 
-  // --- Célula Inteligente ---
   function CellInput({ value, type, list, onSave }) {
       const [val, setVal] = useState(value || "");
       useEffect(() => { setVal(value || ""); }, [value]);
@@ -337,42 +352,39 @@
       );
   }
 
-  // --- GERADOR DE PLANILHAS (COM MÚLTIPLA SELEÇÃO, FÓRMULAS E ORDENAÇÃO) ---
   function SpreadsheetView({ title, description, data, fields, onAdd, onUpdate, onRemoveBatch, onImport, sortBy }) {
      const fileInputRef = useRef(null);
      const [selectedRows, setSelectedRows] = useState(new Set());
 
-     // ORDENAÇÃO INTELIGENTE: Datas antigas no topo, novas embaixo. Linhas sem data ficam no final de tudo.
      const sortedData = useMemo(() => {
          if (!sortBy) return data;
          return [...data].sort((a, b) => {
              const valA = a[sortBy] || "";
              const valB = b[sortBy] || "";
              if (!valA && !valB) return a.id.localeCompare(b.id);
-             if (!valA) return 1; // Joga linha em branco pro final
-             if (!valB) return -1; // Joga linha em branco pro final
+             if (!valA) return 1; 
+             if (!valB) return -1; 
              return valA.localeCompare(valB) || a.id.localeCompare(b.id);
          });
      }, [data, sortBy]);
 
      const exportXLS = () => {
+        if (!window.XLSX) return alert("Ferramenta de exportação carregando, tente novamente em 2 segundos.");
         const exportData = sortedData.map(item => {
            let row = {};
            fields.forEach(f => { row[f.label] = item[f.name] || ""; });
            return row;
         });
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 30));
-        XLSX.writeFile(wb, `${title}_Nellus.xlsx`);
+        const ws = window.XLSX.utils.json_to_sheet(exportData);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 30));
+        window.XLSX.writeFile(wb, `${title}_Nellus.xlsx`);
      };
 
      const addNewRow = () => { onAdd({ id: uid("r_") }); };
 
      const handleCellSave = (item, fieldName, newValue) => {
         let updated = { ...item, [fieldName]: newValue };
-        
-        // Fórmulas Automáticas para Vendas
         if (title === "Vendas") {
            if (updated.inicio && updated.termino) {
                const diff = calculateTimeDiff(updated.inicio, updated.termino);
@@ -500,11 +512,13 @@
     const submit = (e) => { e.preventDefault(); if (!draft.clientName || !draft.room) return; onAdd({ ...draft, id: uid("b_") }); setShowForm(false); };
 
     const exportAgendaXLS = () => {
+      if (!window.XLSX) return alert("Ferramenta de exportação carregando, aguarde um segundo.");
       const data = bookings.map((b) => ({ "Data": b.date.split("-").reverse().join("/"), "Início": b.start || "", "Fim": b.end || "", "Cliente": b.clientName || "", "Espaço / Sala": b.room || "", "Valor": b.price || "", "Observações": b.notes || "" }));
-      const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Agenda"); XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
+      const ws = window.XLSX.utils.json_to_sheet(data); const wb = window.XLSX.utils.book_new(); window.XLSX.utils.book_append_sheet(wb, ws, "Agenda"); window.XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
     };
 
     const exportAgendaPDF = () => {
+      if (!window.jspdf) return alert("Ferramenta de PDF carregando, aguarde um segundo.");
       const { jsPDF } = window.jspdf; const doc = new jsPDF();
       doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
       doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
@@ -707,15 +721,10 @@
       add: (novo) => { stateSetter(prev => [...prev, novo]); enviarParaNuvem(collectionName, novo.id, novo); },
       update: (item) => { stateSetter(prev => prev.map(i => i.id === item.id ? item : i)); enviarParaNuvem(collectionName, item.id, item); },
       removeBatch: (idsArray, currentData) => { 
-          // Guarda os itens na lixeira temporária
           const itemsToDelete = currentData.filter(i => idsArray.includes(i.id));
           setUndoState({ collection: collectionName, items: itemsToDelete, setter: stateSetter });
-
-          // Remove do estado e do Firebase
           stateSetter(prev => prev.filter(i => !idsArray.includes(i.id))); 
           idsArray.forEach(id => enviarParaNuvem(collectionName, id, null));
-
-          // Limpa o botão de desfazer depois de 10 segundos
           if(window.undoTimeout) clearTimeout(window.undoTimeout);
           window.undoTimeout = setTimeout(() => setUndoState(null), 10000);
       }
@@ -743,9 +752,10 @@
 
     const handleImportVirtual = (e) => {
       const file = e.target.files[0]; if (!file) return;
+      if (!window.XLSX) return alert("A ferramenta de importação ainda está carregando. Aguarde 2 segundos e tente novamente.");
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const workbook = window.XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
         const ws = workbook.Sheets[workbook.SheetNames.includes("CLIENTES - Escritório Virtual") ? "CLIENTES - Escritório Virtual" : workbook.SheetNames[0]];
         let count = 0;
         extractDataFromSheet(ws, ["FORMA DE PAGAMENTO", "CLIENTE", "CPF"]).forEach(row => {
@@ -759,9 +769,10 @@
 
     const handleImportPresencial = (e) => {
       const file = e.target.files[0]; if (!file) return;
+      if (!window.XLSX) return alert("A ferramenta de importação ainda está carregando. Aguarde 2 segundos e tente novamente.");
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const workbook = window.XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
         const ws = workbook.Sheets[workbook.SheetNames.includes("CLIENTES - Presencial") ? "CLIENTES - Presencial" : workbook.SheetNames[0]];
         let count = 0;
         extractDataFromSheet(ws, ["PORTE EMPRESARIAL", "CLIENTE/RESP. LEGAL", "CNPJ"]).forEach(row => {
@@ -775,9 +786,10 @@
 
     const handleImportVendas = (e) => {
       const file = e.target.files[0]; if (!file) return;
+      if (!window.XLSX) return alert("A ferramenta de importação ainda está carregando. Aguarde 2 segundos e tente novamente.");
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const workbook = window.XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
         const ws = workbook.Sheets[workbook.SheetNames.includes("VENDAS") ? "VENDAS" : workbook.SheetNames[0]];
         let count = 0;
         extractDataFromSheet(ws, ["CLIENTE - CPF", "TIPO DE SERVIÇO", "CONTRATAÇÃO"]).forEach(row => {
