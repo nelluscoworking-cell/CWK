@@ -52,6 +52,19 @@
     }
     .nellus-app * { box-sizing: border-box; }
 
+    /* Trava de Rotação (Aviso para forçar Horizontal) */
+    .rotate-warning { display: none; }
+    
+    @media screen and (max-width: 900px) and (orientation: portrait) {
+      .nellus-app { display: none !important; }
+      .rotate-warning {
+        display: flex; flex-direction: column; position: fixed; inset: 0;
+        background: var(--teal-deep); color: #EFEAE0;
+        align-items: center; justify-content: center; text-align: center;
+        font-size: 22px; font-weight: 600; padding: 30px; font-family: 'Fraunces', serif; z-index: 9999;
+      }
+    }
+
     @media (max-width: 800px) {
       .nellus-app { grid-template-columns: 1fr; }
     }
@@ -204,7 +217,7 @@
 
   // --- CONFIGURAÇÕES DE SEGURANÇA E BANCO DE DADOS ---
   const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
-  const FIREBASE_API_KEY = "COLE_SUA_API_KEY_AQUI"; // <-- COLE SUA CHAVE AQUI NO PASSO 3
+  const FIREBASE_API_KEY = "AIzaSyCNv8l0xRgtoQX7q_UZQYspHASugTpr3BE"; // SUA CHAVE JÁ ESTÁ AQUI
 
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
 
@@ -520,7 +533,6 @@
 
   // --- COMPONENTE PRINCIPAL ---
   function NellusApp() {
-    // Estado de Autenticação
     const [authToken, setAuthToken] = useState(localStorage.getItem("nellus_token") || null);
     const [loginLoading, setLoginLoading] = useState("");
 
@@ -533,10 +545,6 @@
     const [vendas, setVendas] = useState([]);
 
     const handleLogin = async (email, password) => {
-        if (FIREBASE_API_KEY === "COLE_SUA_API_KEY_AQUI") {
-            alert("Atenção: Você ainda não colou a sua API Key no código (Passo 3 das instruções).");
-            return;
-        }
         setLoginLoading("Verificando...");
         try {
             const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`, {
@@ -566,7 +574,7 @@
       if (!authToken) return;
       try {
         const res = await fetch(`${DB_BASE_URL}.json?auth=${authToken}`);
-        if (res.status === 401) { handleLogout(); return; } // Token expirado ou inválido
+        if (res.status === 401) { handleLogout(); return; } // Token expirado
         if (!res.ok) { setStatusMsg("⚠️ Erro de Permissão"); return; }
         
         const data = await res.json();
