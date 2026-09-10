@@ -229,7 +229,6 @@
 <body>
 
 <div id="root">
-  <!-- Tela de carregamento enquanto o React é processado -->
   <div class="initial-loader">
     <div class="spinner"></div>
     <h2 style="font-family: 'Fraunces', serif; margin: 0; font-size: 24px;">Nellus Coworking</h2>
@@ -307,7 +306,7 @@
     const [sH, sM] = start.split(':').map(Number);
     const [eH, eM] = end.split(':').map(Number);
     let diffMins = (eH * 60 + eM) - (sH * 60 + sM);
-    if (diffMins < 0) diffMins += 24 * 60; // Passou da meia noite
+    if (diffMins < 0) diffMins += 24 * 60; 
     const h = Math.floor(diffMins / 60);
     const m = diffMins % 60;
     return {
@@ -509,7 +508,6 @@
 
     const dayBookings = bookings.filter((b) => b.date === activeDate).sort((a, b) => (a.start || "").localeCompare(b.start || ""));
 
-    // Lógica para Cálculo Automático na Lista de Agenda
     const handleAgendaUpdate = (b, field, val) => {
         let updated = { ...b, [field]: val };
         if (field === 'start' || field === 'end' || field === 'price') {
@@ -524,7 +522,6 @@
         onUpdate(updated);
     };
 
-    // Lógica para Cálculo Automático no Formulário de Novo Agendamento
     const updateDraft = (field, val) => {
          let nextDraft = { ...draft, [field]: val };
          if (field === 'start' || field === 'end' || field === 'price') {
@@ -609,11 +606,17 @@
                     <option value="">Selecione o espaço...</option><option value="Sala privativa 01">Sala privativa 01</option><option value="Sala privativa 02">Sala privativa 02</option><option value="Estação de trabalho">Estação de trabalho</option><option value="Visita">Visita</option>
                   </select>
                   <select className="inline-select" style={{width: 'auto', fontWeight: 'bold', color: 'var(--ink)'}} value={b.price || ""} onChange={(e) => handleAgendaUpdate(b, 'price', e.target.value)}>
-                    <option value="">Valor/h...</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
+                    <option value="">Valor/h...</option>
+                    <option value="R$ 10,00">R$ 10,00</option>
+                    <option value="R$ 45,00">R$ 45,00</option>
+                    <option value="R$ 49,90">R$ 49,90</option>
+                    <option value="R$ 55,00">R$ 55,00</option>
+                    <option value="R$ 59,90">R$ 59,90</option>
+                    <option value="R$ 65,00">R$ 65,00</option>
+                    <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="R$ 1.248,00">R$ 1.248,00</option>
                   </select>
-                  {/* Novo Campo de Total */}
                   <input className="inline-input" style={{width: '95px', fontWeight: 'bold', backgroundColor: '#F9F9F9', color: 'var(--teal-deep)'}} placeholder="Total..." value={b.total || ""} readOnly title="Calculado automaticamente" />
-                  
                   <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => handleAgendaUpdate(b, 'notes', e.target.value)} />
                 </div>
               </div>
@@ -641,7 +644,15 @@
                 <div className="field">
                   <label>Valor / Hora</label>
                   <select style={{fontWeight: 'bold'}} value={draft.price} onChange={(e) => updateDraft('price', e.target.value)}>
-                    <option value="">Sem valor</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
+                    <option value="">Sem valor</option>
+                    <option value="R$ 10,00">R$ 10,00</option>
+                    <option value="R$ 45,00">R$ 45,00</option>
+                    <option value="R$ 49,90">R$ 49,90</option>
+                    <option value="R$ 55,00">R$ 55,00</option>
+                    <option value="R$ 59,90">R$ 59,90</option>
+                    <option value="R$ 65,00">R$ 65,00</option>
+                    <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="R$ 1.248,00">R$ 1.248,00</option>
                   </select>
                 </div>
                 <div className="field">
@@ -758,7 +769,6 @@
         return <LoginScreen onLogin={handleLogin} loadingMsg={loginLoading} />;
     }
 
-    // CRUD Handler aprimorado com Desfazer (Undo)
     const crudHandler = (stateSetter, collectionName) => ({
       add: (novo) => { stateSetter(prev => [...prev, novo]); enviarParaNuvem(collectionName, novo.id, novo); },
       update: (item) => { stateSetter(prev => prev.map(i => i.id === item.id ? item : i)); enviarParaNuvem(collectionName, item.id, item); },
