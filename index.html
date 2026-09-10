@@ -18,14 +18,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
 
-    body {
-      margin: 0;
-      padding: 16px;
-      background-color: #EFEAE0;
-      font-family: 'Manrope', system-ui, sans-serif;
-    }
-
-    .nellus-app {
+    :root {
       --ink: #1B2420;
       --muted: #8A8578;
       --paper: #F7F5F0;
@@ -37,6 +30,16 @@
       --orange-deep: #C96B34;
       --up: #1F9D6C;
       --down: #C1483B;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: #EFEAE0;
+      font-family: 'Manrope', system-ui, sans-serif;
+    }
+
+    .nellus-app {
       color: var(--ink);
       background: var(--paper);
       display: grid;
@@ -48,6 +51,19 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
     .nellus-app * { box-sizing: border-box; }
+
+    /* Trava de Rotação (Aviso para forçar Horizontal) */
+    .rotate-warning { display: none; }
+    
+    @media screen and (max-width: 900px) and (orientation: portrait) {
+      .nellus-app { display: none !important; }
+      .rotate-warning {
+        display: flex; flex-direction: column; position: fixed; inset: 0;
+        background: var(--teal-deep); color: #EFEAE0;
+        align-items: center; justify-content: center; text-align: center;
+        font-size: 22px; font-weight: 600; padding: 30px; font-family: 'Fraunces', serif; z-index: 9999;
+      }
+    }
 
     @media (max-width: 800px) {
       .nellus-app { grid-template-columns: 1fr; }
@@ -99,6 +115,7 @@
     .btn-primary:hover { background: var(--orange-deep); color: #fff; }
     .btn-primary.outline { background: #FFFFFF; border: 1px solid var(--border); color: var(--ink); }
     .btn-primary.outline:hover { background: #EAE5D9; }
+    .btn-primary.full { width: 100%; justify-content: center; margin-top: 8px; }
 
     .icon-btn {
       border: none; background: var(--surface); border: 1px solid var(--border);
@@ -115,6 +132,26 @@
     }
     .inline-input:hover { border-color: var(--border); background: #FFFFFF; }
     .inline-input:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+    .field input, .field select {
+      padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+      font-family: inherit; font-size: 13.5px; outline: none; background: #fff; width: 100%;
+    }
+    .field input:focus, .field select:focus { border-color: var(--teal); }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+
+    .modal-veil {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--surface); border-radius: 14px; width: 100%; max-width: 500px;
+      padding: 22px 24px; border: 1px solid var(--border); box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-head h3 { font-family: 'Fraunces', serif; margin: 0; font-size: 20px; }
 
     /* Estilos de Planilha (Tabela) */
     .table-wrapper {
@@ -163,53 +200,44 @@
 </head>
 <body>
 
+<div id="rotate-message" class="rotate-warning">
+  <div style="font-size: 40px; margin-bottom: 10px;">🔄</div>
+  Por favor, vire o seu celular na horizontal (deitado) para utilizar o aplicativo de forma otimizada.
+</div>
+
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useMemo, useRef } = React;
+  const { useState, useEffect, useMemo } = React;
 
   const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
 
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
 
-  const parseExcelDate = (excelValue) => {
-    if (!excelValue) return "";
-    if (typeof excelValue === 'number') {
-      const date = new Date((excelValue - 25569) * 86400 * 1000);
-      return date.toISOString().slice(0, 10);
-    }
-    if (typeof excelValue === 'string') {
-        const parts = excelValue.split(" ");
-        if (parts[0].includes("-")) return parts[0];
-        if (parts[0].includes("/")) {
-            const d = parts[0].split("/");
-            if (d.length === 3) return `${d[2]}-${d[1]}-${d[0]}`;
-        }
-    }
-    return String(excelValue);
-  };
+  function Modal({ title, onClose, children }) {
+    return (
+      <div className="modal-veil" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className="modal">
+          <div className="modal-head">
+            <h3>{title}</h3>
+            <button className="icon-btn" onClick={onClose}>✕</button>
+          </div>
+          {children}
+        </div>
+      </div>
+    );
+  }
 
-  const decimalToTime = (decimal) => {
-    if (decimal == null || decimal === "") return "";
-    if (typeof decimal === 'number') {
-      const totalSeconds = Math.round(decimal * 86400);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-    return String(decimal);
-  };
-
-  // --- Célula Inteligente (Salva no Firebase ao sair do campo) ---
-  function CellInput({ value, type, onSave }) {
+  // --- Célula Inteligente (Salva no Firebase ao sair do campo e Suporta Datalist) ---
+  function CellInput({ value, type, list, onSave }) {
       const [val, setVal] = useState(value || "");
       
-      // Atualiza visualmente se o Firebase mandar dado novo
       useEffect(() => { setVal(value || ""); }, [value]);
 
       return (
          <input 
             type={type === 'date' ? 'date' : type === 'time' ? 'time' : 'text'}
+            list={list}
             value={val}
             onChange={e => setVal(e.target.value)}
             onBlur={() => {
@@ -272,6 +300,7 @@
                                <CellInput 
                                   value={item[f.name]} 
                                   type={f.type} 
+                                  list={f.suggest ? "client-list" : undefined}
                                   onSave={(newValue) => onUpdate({ ...item, [f.name]: newValue })} 
                                />
                             </td>
@@ -326,8 +355,8 @@
     { name: 'diaSemana', label: 'DIA SEMANA' },
     { name: 'novoCliente', label: 'NOVO CLIENTE' },
     { name: 'propaganda', label: 'PROPAGANDA' },
-    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ' },
-    { name: 'clienteCpf', label: 'CLIENTE - CPF' },
+    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', suggest: true }, // Adicionado Sugestão
+    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', suggest: true }, // Adicionado Sugestão
     { name: 'contratacao', label: 'CONTRATAÇÃO' },
     { name: 'tipoServico', label: 'TIPO DE SERVIÇO' },
     { name: 'preco', label: 'PREÇO' },
@@ -340,11 +369,13 @@
     { name: 'banco', label: 'BANCO' },
   ];
 
-  // --- AGENDA MANTIDA INTACTA ---
+  // --- AGENDA MANTIDA INTACTA COM AUTO-COMPLETAR ---
   function Agenda({ bookings, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
     const [activeDate, setActiveDate] = useState(todayStr);
+    const [showForm, setShowForm] = useState(false);
+    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", notes: "" });
 
     const daysInMonth = useMemo(() => {
       const [year, month] = currentMonth.split("-").map(Number);
@@ -364,6 +395,13 @@
       .filter((b) => b.date === activeDate)
       .sort((a, b) => (a.start || "").localeCompare(b.start || ""));
 
+    const submit = (e) => {
+      e.preventDefault();
+      if (!draft.clientName || !draft.room) return;
+      onAdd({ ...draft, id: uid("b_") });
+      setShowForm(false);
+    };
+
     return (
       <div className="view">
         <div className="view-head">
@@ -373,7 +411,8 @@
           </div>
           <div className="btn-group">
             <button className="btn-primary" onClick={() => {
-              onAdd({ id: uid("b_"), clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", notes: "" });
+              setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", notes: "" });
+              setShowForm(true);
             }}>+ Novo agendamento rápido</button>
           </div>
         </div>
@@ -410,7 +449,7 @@
                 <input type="time" className="inline-input" style={{width:'auto'}} value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
               </div>
               <div className="agenda-main">
-                <input className="inline-input" style={{ fontWeight: "bold" }} placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
+                <input className="inline-input" style={{ fontWeight: "bold" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
                 <div style={{ display: "flex", gap: "8px" }}>
                   <input className="inline-input muted" placeholder="Espaço/Sala..." value={b.room || ""} onChange={(e) => onUpdate({ ...b, room: e.target.value })} />
                   <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => onUpdate({ ...b, notes: e.target.value })} />
@@ -420,49 +459,33 @@
             </div>
           ))}
         </div>
+
+        {showForm && (
+          <Modal title="Novo agendamento" onClose={() => setShowForm(false)}>
+            <form onSubmit={submit}>
+              <div className="field">
+                <label>Cliente</label>
+                <input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Nome do cliente" required autoFocus />
+              </div>
+              <div className="form-row">
+                <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+                <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
+                <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
+              </div>
+              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Sala de Reunião, Estação 3" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required /></div>
+              <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
+              <button className="btn-primary full" type="submit">Salvar Agendamento</button>
+            </form>
+          </Modal>
+        )}
       </div>
     );
-  }
-
-  // --- Função Leitora do Excel ---
-  function extractDataFromSheet(ws, identifierKeywords) {
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    let headerIndex = -1;
-    let headers = [];
-    
-    for (let i = 0; i < Math.min(30, rows.length); i++) {
-      const rowArray = rows[i] || [];
-      const rowStr = rowArray.join(" ").toUpperCase();
-      if (identifierKeywords.some(kw => rowStr.includes(kw.toUpperCase()))) {
-        headerIndex = i;
-        headers = rowArray.map(h => String(h || "").trim().toUpperCase());
-        break;
-      }
-    }
-
-    if (headerIndex === -1) return [];
-
-    const data = [];
-    for (let i = headerIndex + 1; i < rows.length; i++) {
-      const rowArray = rows[i] || [];
-      if (rowArray.length === 0 || rowArray.every(cell => cell == null || String(cell).trim() === "")) continue;
-      
-      const obj = {};
-      headers.forEach((h, colIdx) => {
-        if (h) {
-          obj[h] = rowArray[colIdx] !== undefined ? rowArray[colIdx] : "";
-        }
-      });
-      data.push(obj);
-    }
-    return data;
   }
 
   // --- COMPONENTE PRINCIPAL ---
   function NellusApp() {
     const [tab, setTab] = useState("agenda");
     const [statusMsg, setStatusMsg] = useState("Conectando...");
-    const globalImportRef = useRef(null);
     
     const [bookings, setBookings] = useState(() => { try { return JSON.parse(localStorage.getItem("nellus_bookings") || "[]"); } catch(e) { return []; } });
     const [clientesVirtual, setClientesVirtual] = useState([]);
@@ -514,114 +537,27 @@
     const hPresencial = crudHandler(setClientesPresencial, "clientesPresencial");
     const hVendas = crudHandler(setVendas, "vendas");
 
-    const handleGlobalImport = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        let cvCount = 0; let cpCount = 0; let vCount = 0;
-
-        if (workbook.SheetNames.includes("CLIENTES - Escritório Virtual")) {
-           const ws = workbook.Sheets["CLIENTES - Escritório Virtual"];
-           const json = extractDataFromSheet(ws, ["FORMA DE PAGAMENTO", "CLIENTE"]);
-           json.forEach(row => {
-               const id = uid("cv_");
-               const item = {
-                   id,
-                   cliente: row["CLIENTE"] || "",
-                   cpf: row["CPF"] || "",
-                   email: row["EMAIL"] || row["E-MAIL"] || "",
-                   contato: row["CONTATO"] || "",
-                   razaoSocial: row["RAZÃO SOCIAL"] || "",
-                   cnpj: row["CNPJ"] || "",
-                   dataEntrada: parseExcelDate(row["DATA DE ENTRADA"]),
-                   formaPagamento: row["FORMA DE PAGAMENTO"] || ""
-               };
-               if (item.cliente || item.razaoSocial) {
-                 enviarParaNuvem("clientesVirtual", id, item);
-                 cvCount++;
-               }
-           });
-        }
-
-        if (workbook.SheetNames.includes("CLIENTES - Presencial")) {
-           const ws = workbook.Sheets["CLIENTES - Presencial"];
-           const json = extractDataFromSheet(ws, ["PORTE EMPRESARIAL", "CLIENTE/RESP. LEGAL"]);
-           json.forEach(row => {
-               const id = uid("cp_");
-               const item = {
-                   id,
-                   cnpj: row["CNPJ"] || "",
-                   razaoSocial: row["RAZÃO SOCIAL"] || "",
-                   porte: row["PORTE EMPRESARIAL"] || "",
-                   cpf: row["CPF"] || "",
-                   rg: row["RG"] || "",
-                   dataNascimento: parseExcelDate(row["DATA NASCIMENTO"]),
-                   responsavel: row["CLIENTE/RESP. LEGAL"] || "",
-                   atividade: row["ATIVIDADE"] || "",
-                   servicoEmpresa: row["A SERVIÇO DA EMPRESA"] || "",
-                   telefone: row["TELEFONE"] || "",
-                   email: row["E-MAIL"] || row["EMAIL"] || "",
-                   logradouro: row["LOGRADOURO"] || "",
-                   cep: row["CEP"] || "",
-                   bairro: row["BAIRRO"] || "",
-                   cidade: row["CIDADE"] || "",
-                   uf: row["UF"] || "",
-                   servico: row["SERVIÇO"] || "",
-                   inicio: parseExcelDate(row["INÍCIO"]) || parseExcelDate(row["INICIO"]),
-                   termino: parseExcelDate(row["TÉRMINO"]) || parseExcelDate(row["TERMINO"]),
-                   contrato: row["Nº CONTRATO"] || row["N° CONTRATO"] || ""
-               };
-               if (item.responsavel || item.razaoSocial) {
-                 enviarParaNuvem("clientesPresencial", id, item);
-                 cpCount++;
-               }
-           });
-        }
-
-        if (workbook.SheetNames.includes("VENDAS")) {
-           const ws = workbook.Sheets["VENDAS"];
-           const json = extractDataFromSheet(ws, ["CLIENTE - CPF", "TIPO DE SERVIÇO"]);
-           json.forEach(row => {
-               const id = uid("v_");
-               const item = {
-                   id,
-                   data: parseExcelDate(row["DATA"]),
-                   diaSemana: row["DIA SEMANA"] || "",
-                   novoCliente: row["NOVO CLIENTE"] || "",
-                   propaganda: row["PROPAGANDA"] || "",
-                   clienteCnpj: row["CLIENTE - CNPJ"] || "",
-                   clienteCpf: row["CLIENTE - CPF"] || "",
-                   contratacao: row["CONTRATAÇÃO"] || "",
-                   tipoServico: row["TIPO DE SERVIÇO"] || "",
-                   preco: row["PREÇO"] || row["PRECO"] || "",
-                   inicio: decimalToTime(row["INICIO"]) || decimalToTime(row["INÍCIO"]) || "",
-                   termino: decimalToTime(row["TÉRMINO"]) || decimalToTime(row["TERMINO"]) || "",
-                   totalHoras: row["TOTAL HORAS"] || "",
-                   valorPagar: row["VALOR A PAGAR"] || "",
-                   nf: row["N° NF"] || row["Nº NF"] || "",
-                   pagamento: row["PAGAMENTO"] || "",
-                   banco: row["BANCO"] || ""
-               };
-               if (item.data || item.clienteCpf || item.tipoServico) {
-                 enviarParaNuvem("vendas", id, item);
-                 vCount++;
-               }
-           });
-        }
-
-        alert(`Iniciando envio para a nuvem:\n\n- ${cvCount} Clientes Virtuais\n- ${cpCount} Clientes Presenciais\n- ${vCount} Vendas\n\nA página será recarregada em 3 segundos para exibir os dados.`);
-        setTimeout(() => window.location.reload(), 3000);
-      };
-      reader.readAsArrayBuffer(file);
-    };
+    // Lógica para Auto-completar Clientes (Busca os nomes já cadastrados nas planilhas)
+    const allClientNames = useMemo(() => {
+      const names = new Set();
+      clientesVirtual.forEach(c => {
+        if (c.cliente) names.add(c.cliente);
+        if (c.razaoSocial) names.add(c.razaoSocial);
+      });
+      clientesPresencial.forEach(c => {
+        if (c.responsavel) names.add(c.responsavel);
+        if (c.razaoSocial) names.add(c.razaoSocial);
+      });
+      return Array.from(names).filter(Boolean).sort();
+    }, [clientesVirtual, clientesPresencial]);
 
     return (
       <div className="nellus-app">
+        {/* Renderiza a lista de auto-completar na raiz para ficar disponível no app todo */}
+        <datalist id="client-list">
+          {allClientNames.map(name => <option key={name} value={name} />)}
+        </datalist>
+
         <aside className="sidebar">
           <div className="brand">
             <div className="brand-text">
@@ -643,11 +579,6 @@
             <button className={"nav-item" + (tab === "vendas" ? " active" : "")} onClick={() => setTab("vendas")}>
               💰 Vendas
             </button>
-            
-            <input type="file" accept=".xlsx, .xls" style={{display: "none"}} ref={globalImportRef} onChange={handleGlobalImport} />
-            <button className="nav-item" onClick={() => globalImportRef.current.click()} style={{marginTop: '24px', background: 'rgba(255,255,255,0.1)', color: '#fff'}}>
-              📤 Importar Planilha (Excel)
-            </button>
           </nav>
           <div className="sidebar-foot">
             <b>Vercel + Firebase</b><br />
@@ -662,7 +593,7 @@
           {tab === "virtual" && (
              <SpreadsheetView 
                 title="Escritório Virtual" 
-                description="Preencha os dados lado a lado. Salva automaticamente ao sair do campo."
+                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
                 data={clientesVirtual} fields={virtualFields}
                 onAdd={hVirtual.add} onUpdate={hVirtual.update} onRemove={hVirtual.remove} 
              />
@@ -670,7 +601,7 @@
           {tab === "presencial" && (
              <SpreadsheetView 
                 title="Clientes Presenciais" 
-                description="Preencha os dados lado a lado. Salva automaticamente ao sair do campo."
+                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
                 data={clientesPresencial} fields={presencialFields}
                 onAdd={hPresencial.add} onUpdate={hPresencial.update} onRemove={hPresencial.remove} 
              />
@@ -678,7 +609,7 @@
           {tab === "vendas" && (
              <SpreadsheetView 
                 title="Vendas" 
-                description="Preencha os dados lado a lado. Salva automaticamente ao sair do campo."
+                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
                 data={vendas} fields={vendasFields}
                 onAdd={hVendas.add} onUpdate={hVendas.update} onRemove={hVendas.remove} 
              />
