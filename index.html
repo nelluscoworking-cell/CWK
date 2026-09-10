@@ -306,7 +306,7 @@
     const [sH, sM] = start.split(':').map(Number);
     const [eH, eM] = end.split(':').map(Number);
     let diffMins = (eH * 60 + eM) - (sH * 60 + sM);
-    if (diffMins < 0) diffMins += 24 * 60; 
+    if (diffMins < 0) diffMins += 24 * 60; // Passou da meia noite
     const h = Math.floor(diffMins / 60);
     const m = diffMins % 60;
     return {
@@ -614,6 +614,7 @@
                     <option value="R$ 59,90">R$ 59,90</option>
                     <option value="R$ 65,00">R$ 65,00</option>
                     <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="R$ 520,00">R$ 520,00</option>
                     <option value="R$ 1.248,00">R$ 1.248,00</option>
                   </select>
                   <input className="inline-input" style={{width: '95px', fontWeight: 'bold', backgroundColor: '#F9F9F9', color: 'var(--teal-deep)'}} placeholder="Total..." value={b.total || ""} readOnly title="Calculado automaticamente" />
@@ -652,6 +653,7 @@
                     <option value="R$ 59,90">R$ 59,90</option>
                     <option value="R$ 65,00">R$ 65,00</option>
                     <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="R$ 520,00">R$ 520,00</option>
                     <option value="R$ 1.248,00">R$ 1.248,00</option>
                   </select>
                 </div>
