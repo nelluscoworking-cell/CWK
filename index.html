@@ -125,13 +125,13 @@
     .icon-btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
     .icon-btn.ghost:hover { background: #F1ECE1; color: var(--down); }
 
-    .inline-input {
+    .inline-input, .inline-select {
       border: 1px solid transparent; background: transparent;
       font-family: inherit; font-size: inherit; color: inherit;
       padding: 3px 6px; border-radius: 6px; width: 100%;
     }
-    .inline-input:hover { border-color: var(--border); background: #FFFFFF; }
-    .inline-input:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
+    .inline-input:hover, .inline-select:hover { border-color: var(--border); background: #FFFFFF; }
+    .inline-input:focus, .inline-select:focus { border-color: var(--teal); background: #FFFFFF; outline: none; }
 
     .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
     .field input, .field select {
@@ -192,8 +192,8 @@
     .date-chip.has-booking { border-bottom: 3px solid var(--orange); }
     .agenda-list { display: flex; flex-direction: column; gap: 10px; }
     .agenda-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
-    .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); width: 175px; flex-shrink: 0; }
-    .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 2px; }
+    .agenda-time { display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--ink); width: 185px; flex-shrink: 0; font-weight: 800; }
+    .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 4px; }
 
     .sync-status { font-size: 11px; padding: 4px 9px; border-radius: 12px; background: rgba(255,255,255,0.18); display: inline-block; margin-top: 6px; font-weight: 600; }
   </style>
@@ -355,8 +355,8 @@
     { name: 'diaSemana', label: 'DIA SEMANA' },
     { name: 'novoCliente', label: 'NOVO CLIENTE' },
     { name: 'propaganda', label: 'PROPAGANDA' },
-    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', suggest: true }, // Adicionado Sugestão
-    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', suggest: true }, // Adicionado Sugestão
+    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', suggest: true }, 
+    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', suggest: true }, 
     { name: 'contratacao', label: 'CONTRATAÇÃO' },
     { name: 'tipoServico', label: 'TIPO DE SERVIÇO' },
     { name: 'preco', label: 'PREÇO' },
@@ -369,13 +369,13 @@
     { name: 'banco', label: 'BANCO' },
   ];
 
-  // --- AGENDA MANTIDA INTACTA COM AUTO-COMPLETAR ---
+  // --- AGENDA COM DROPDOWNS E HORÁRIOS EM NEGRITO ---
   function Agenda({ bookings, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
     const [activeDate, setActiveDate] = useState(todayStr);
     const [showForm, setShowForm] = useState(false);
-    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", notes: "" });
+    const [draft, setDraft] = useState({ clientName: "", date: todayStr, start: "09:00", end: "10:00", room: "", price: "", notes: "" });
 
     const daysInMonth = useMemo(() => {
       const [year, month] = currentMonth.split("-").map(Number);
@@ -402,6 +402,55 @@
       setShowForm(false);
     };
 
+    const exportAgendaXLS = () => {
+      const data = bookings.map((b) => ({
+        "Data": b.date.split("-").reverse().join("/"),
+        "Início": b.start || "",
+        "Fim": b.end || "",
+        "Cliente": b.clientName || "",
+        "Espaço / Sala": b.room || "",
+        "Valor": b.price || "",
+        "Observações": b.notes || ""
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Agenda");
+      XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
+    };
+
+    const exportAgendaPDF = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+
+      const tableData = bookings
+        .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
+        .map((b) => [
+          b.date.split("-").reverse().join("/"),
+          `${b.start || ""} - ${b.end || ""}`,
+          b.clientName || "",
+          b.room || "",
+          b.price || "",
+          b.notes || ""
+        ]);
+
+      doc.autoTable({
+        head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Valor", "Observações"]],
+        body: tableData,
+        startY: 30,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 110, 86] },
+        styles: { fontSize: 9, font: 'helvetica' }
+      });
+
+      doc.save(`Agenda_Nellus_${currentMonth}.pdf`);
+    };
+
     return (
       <div className="view">
         <div className="view-head">
@@ -410,8 +459,10 @@
             <p>Reservas centralizadas com visualização do mês inteiro.</p>
           </div>
           <div className="btn-group">
+            <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
+            <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
             <button className="btn-primary" onClick={() => {
-              setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", notes: "" });
+              setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", price: "", notes: "" });
               setShowForm(true);
             }}>+ Novo agendamento rápido</button>
           </div>
@@ -444,14 +495,35 @@
             <div className="agenda-row" key={b.id}>
               <div className="agenda-time">
                 <span>⏱</span>
-                <input type="time" className="inline-input" style={{width:'auto'}} value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.start || ""} onChange={(e) => onUpdate({ ...b, start: e.target.value })} />
                 <span>–</span>
-                <input type="time" className="inline-input" style={{width:'auto'}} value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
+                <input type="time" className="inline-input" style={{width:'auto', fontWeight: '800', color: 'var(--ink)'}} value={b.end || ""} onChange={(e) => onUpdate({ ...b, end: e.target.value })} />
               </div>
               <div className="agenda-main">
-                <input className="inline-input" style={{ fontWeight: "bold" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
+                <input className="inline-input" style={{ fontWeight: "bold", fontSize: "14px" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <input className="inline-input muted" placeholder="Espaço/Sala..." value={b.room || ""} onChange={(e) => onUpdate({ ...b, room: e.target.value })} />
+                  
+                  {/* Dropdown de Espaço / Sala */}
+                  <select className="inline-select muted" style={{width: 'auto'}} value={b.room || ""} onChange={(e) => onUpdate({ ...b, room: e.target.value })}>
+                    <option value="">Selecione o espaço...</option>
+                    <option value="Sala privativa 01">Sala privativa 01</option>
+                    <option value="Sala privativa 02">Sala privativa 02</option>
+                    <option value="Estação de trabalho">Estação de trabalho</option>
+                    <option value="Visita">Visita</option>
+                  </select>
+
+                  {/* Dropdown de Valor */}
+                  <select className="inline-select" style={{width: 'auto', fontWeight: 'bold', color: 'var(--ink)'}} value={b.price || ""} onChange={(e) => onUpdate({ ...b, price: e.target.value })}>
+                    <option value="">Valor...</option>
+                    <option value="R$ 10,00">R$ 10,00</option>
+                    <option value="R$ 45,00">R$ 45,00</option>
+                    <option value="R$ 49,90">R$ 49,90</option>
+                    <option value="R$ 55,00">R$ 55,00</option>
+                    <option value="R$ 59,90">R$ 59,90</option>
+                    <option value="R$ 65,00">R$ 65,00</option>
+                    <option value="R$ 69,90">R$ 69,90</option>
+                  </select>
+
                   <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => onUpdate({ ...b, notes: e.target.value })} />
                 </div>
               </div>
@@ -465,14 +537,38 @@
             <form onSubmit={submit}>
               <div className="field">
                 <label>Cliente</label>
-                <input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Nome do cliente" required autoFocus />
+                <input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Digite para buscar..." required autoFocus />
               </div>
               <div className="form-row">
                 <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
                 <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
                 <div className="field"><label>Fim</label><input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
               </div>
-              <div className="field"><label>Espaço / Estação</label><input placeholder="Ex.: Sala de Reunião, Estação 3" value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required /></div>
+              <div className="form-row">
+                <div className="field">
+                  <label>Espaço / Sala</label>
+                  <select value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required>
+                    <option value="">Selecione...</option>
+                    <option value="Sala privativa 01">Sala privativa 01</option>
+                    <option value="Sala privativa 02">Sala privativa 02</option>
+                    <option value="Estação de trabalho">Estação de trabalho</option>
+                    <option value="Visita">Visita</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Valor do Serviço</label>
+                  <select style={{fontWeight: 'bold'}} value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })}>
+                    <option value="">Sem valor</option>
+                    <option value="R$ 10,00">R$ 10,00</option>
+                    <option value="R$ 45,00">R$ 45,00</option>
+                    <option value="R$ 49,90">R$ 49,90</option>
+                    <option value="R$ 55,00">R$ 55,00</option>
+                    <option value="R$ 59,90">R$ 59,90</option>
+                    <option value="R$ 65,00">R$ 65,00</option>
+                    <option value="R$ 69,90">R$ 69,90</option>
+                  </select>
+                </div>
+              </div>
               <div className="field"><label>Observações</label><input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></div>
               <button className="btn-primary full" type="submit">Salvar Agendamento</button>
             </form>
