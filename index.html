@@ -52,19 +52,6 @@
     }
     .nellus-app * { box-sizing: border-box; }
 
-    /* Trava de Rotação (Aviso para forçar Horizontal) */
-    .rotate-warning { display: none; }
-    
-    @media screen and (max-width: 900px) and (orientation: portrait) {
-      .nellus-app { display: none !important; }
-      .rotate-warning {
-        display: flex; flex-direction: column; position: fixed; inset: 0;
-        background: var(--teal-deep); color: #EFEAE0;
-        align-items: center; justify-content: center; text-align: center;
-        font-size: 22px; font-weight: 600; padding: 30px; font-family: 'Fraunces', serif; z-index: 9999;
-      }
-    }
-
     @media (max-width: 800px) {
       .nellus-app { grid-template-columns: 1fr; }
     }
@@ -136,7 +123,7 @@
     .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
     .field input, .field select {
       padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
-      font-family: inherit; font-size: 13.5px; outline: none; background: #fff; width: 100%;
+      font-family: inherit; font-size: 13.5px; outline: none; background: #fff; width: 100%; box-sizing: border-box;
     }
     .field input:focus, .field select:focus { border-color: var(--teal); }
     .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
@@ -196,21 +183,28 @@
     .agenda-main { display: flex; flex-direction: column; flex: 1; gap: 4px; }
 
     .sync-status { font-size: 11px; padding: 4px 9px; border-radius: 12px; background: rgba(255,255,255,0.18); display: inline-block; margin-top: 6px; font-weight: 600; }
+    
+    /* Tela de Login */
+    .login-container {
+      display: flex; align-items: center; justify-content: center; 
+      min-height: 100vh; background: var(--teal-deep); padding: 20px;
+    }
+    .login-box {
+      background: var(--surface); padding: 40px; border-radius: 20px; 
+      width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
 
-<div id="rotate-message" class="rotate-warning">
-  <div style="font-size: 40px; margin-bottom: 10px;">🔄</div>
-  Por favor, vire o seu celular na horizontal (deitado) para utilizar o aplicativo de forma otimizada.
-</div>
-
 <div id="root"></div>
 
 <script type="text/babel">
-  const { useState, useEffect, useMemo } = React;
+  const { useState, useEffect, useMemo, useRef } = React;
 
+  // --- CONFIGURAÇÕES DE SEGURANÇA E BANCO DE DADOS ---
   const DB_BASE_URL = "https://nellus-gestao-default-rtdb.firebaseio.com/nellus";
+  const FIREBASE_API_KEY = "COLE_SUA_API_KEY_AQUI"; // <-- COLE SUA CHAVE AQUI NO PASSO 3
 
   function uid(p) { return p + Math.random().toString(36).slice(2, 8); }
 
@@ -228,30 +222,72 @@
     );
   }
 
-  // --- Célula Inteligente (Salva no Firebase ao sair do campo e Suporta Datalist) ---
+  const parseExcelDate = (excelValue) => {
+    if (!excelValue) return "";
+    if (typeof excelValue === 'number') {
+      const date = new Date((excelValue - 25569) * 86400 * 1000);
+      return date.toISOString().slice(0, 10);
+    }
+    if (typeof excelValue === 'string') {
+        const parts = excelValue.split(" ");
+        if (parts[0].includes("-")) return parts[0];
+        if (parts[0].includes("/")) {
+            const d = parts[0].split("/");
+            if (d.length === 3) return `${d[2]}-${d[1]}-${d[0]}`;
+        }
+    }
+    return String(excelValue);
+  };
+
+  const decimalToTime = (decimal) => {
+    if (decimal == null || decimal === "") return "";
+    if (typeof decimal === 'number') {
+      const totalSeconds = Math.round(decimal * 86400);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+    return String(decimal);
+  };
+
+  function extractDataFromSheet(ws, identifierKeywords) {
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    let headerIndex = -1;
+    let headers = [];
+    for (let i = 0; i < Math.min(30, rows.length); i++) {
+      const rowArray = rows[i] || [];
+      const rowStr = rowArray.join(" ").toUpperCase();
+      if (identifierKeywords.some(kw => rowStr.includes(kw.toUpperCase()))) {
+        headerIndex = i;
+        headers = rowArray.map(h => String(h || "").trim().toUpperCase());
+        break;
+      }
+    }
+    if (headerIndex === -1) return [];
+
+    const data = [];
+    for (let i = headerIndex + 1; i < rows.length; i++) {
+      const rowArray = rows[i] || [];
+      if (rowArray.length === 0 || rowArray.every(cell => cell == null || String(cell).trim() === "")) continue;
+      const obj = {};
+      headers.forEach((h, colIdx) => {
+        if (h) obj[h] = rowArray[colIdx] !== undefined ? rowArray[colIdx] : "";
+      });
+      data.push(obj);
+    }
+    return data;
+  }
+
   function CellInput({ value, type, list, onSave }) {
       const [val, setVal] = useState(value || "");
-      
       useEffect(() => { setVal(value || ""); }, [value]);
-
       return (
-         <input 
-            type={type === 'date' ? 'date' : type === 'time' ? 'time' : 'text'}
-            list={list}
-            value={val}
-            onChange={e => setVal(e.target.value)}
-            onBlur={() => {
-                if (val !== (value || "")) {
-                    onSave(val);
-                }
-            }}
-            placeholder="..."
-         />
+         <input type={type === 'date' ? 'date' : type === 'time' ? 'time' : 'text'} list={list} value={val} onChange={e => setVal(e.target.value)} onBlur={() => { if (val !== (value || "")) onSave(val); }} placeholder="..." />
       );
   }
 
-  // --- GERADOR DE PLANILHAS (VISUAL EXCEL) ---
-  function SpreadsheetView({ title, description, data, fields, onAdd, onUpdate, onRemove }) {
+  function SpreadsheetView({ title, description, data, fields, onAdd, onUpdate, onRemove, onImport }) {
+     const fileInputRef = useRef(null);
      const exportXLS = () => {
         const exportData = data.map(item => {
            let row = {};
@@ -263,11 +299,7 @@
         XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 30));
         XLSX.writeFile(wb, `${title}_Nellus.xlsx`);
      };
-
-     const addNewRow = () => {
-         const newRow = { id: uid("r_") };
-         onAdd(newRow);
-     };
+     const addNewRow = () => { onAdd({ id: uid("r_") }); };
 
      return (
         <div className="view">
@@ -277,10 +309,11 @@
               <p>{description}</p>
             </div>
             <div className="btn-group">
+              <input type="file" accept=".xlsx, .xls" style={{display: "none"}} ref={fileInputRef} onChange={onImport} />
+              <button className="btn-primary outline" onClick={() => fileInputRef.current.click()}>📤 Importar Planilha</button>
               <button className="btn-primary outline" onClick={exportXLS}>📥 Exportar Planilha</button>
             </div>
           </div>
-
           <div className="table-wrapper">
              <table className="spreadsheet-table">
                 <thead>
@@ -297,12 +330,7 @@
                          </td>
                          {fields.map(f => (
                             <td key={f.name}>
-                               <CellInput 
-                                  value={item[f.name]} 
-                                  type={f.type} 
-                                  list={f.suggest ? "client-list" : undefined}
-                                  onSave={(newValue) => onUpdate({ ...item, [f.name]: newValue })} 
-                               />
+                               <CellInput value={item[f.name]} type={f.type} list={f.suggest ? "client-list" : undefined} onSave={(newValue) => onUpdate({ ...item, [f.name]: newValue })} />
                             </td>
                          ))}
                       </tr>
@@ -315,61 +343,31 @@
      );
   }
 
-  // --- CONFIGURAÇÃO EXATA DAS COLUNAS DA SUA PLANILHA ---
   const virtualFields = [
-    { name: 'cliente', label: 'CLIENTE' },
-    { name: 'cpf', label: 'CPF' },
-    { name: 'email', label: 'EMAIL' },
-    { name: 'contato', label: 'CONTATO' },
-    { name: 'razaoSocial', label: 'RAZÃO SOCIAL' },
-    { name: 'cnpj', label: 'CNPJ' },
-    { name: 'dataEntrada', label: 'DATA DE ENTRADA', type: 'date' },
-    { name: 'formaPagamento', label: 'FORMA DE PAGAMENTO' },
+    { name: 'cliente', label: 'CLIENTE' }, { name: 'cpf', label: 'CPF' }, { name: 'email', label: 'EMAIL' },
+    { name: 'contato', label: 'CONTATO' }, { name: 'razaoSocial', label: 'RAZÃO SOCIAL' }, { name: 'cnpj', label: 'CNPJ' },
+    { name: 'dataEntrada', label: 'DATA DE ENTRADA', type: 'date' }, { name: 'formaPagamento', label: 'FORMA DE PAGAMENTO' },
   ];
 
   const presencialFields = [
-    { name: 'cnpj', label: 'CNPJ' },
-    { name: 'razaoSocial', label: 'RAZÃO SOCIAL' },
-    { name: 'porte', label: 'PORTE EMPRESARIAL' },
-    { name: 'cpf', label: 'CPF' },
-    { name: 'rg', label: 'RG' },
-    { name: 'dataNascimento', label: 'DATA NASCIMENTO', type: 'date' },
-    { name: 'responsavel', label: 'CLIENTE/RESP. LEGAL' },
-    { name: 'atividade', label: 'ATIVIDADE' },
-    { name: 'servicoEmpresa', label: 'A SERVIÇO DA EMPRESA' },
-    { name: 'telefone', label: 'TELEFONE' },
-    { name: 'email', label: 'E-MAIL' },
-    { name: 'logradouro', label: 'LOGRADOURO' },
-    { name: 'cep', label: 'CEP' },
-    { name: 'bairro', label: 'BAIRRO' },
-    { name: 'cidade', label: 'CIDADE' },
-    { name: 'uf', label: 'UF' },
-    { name: 'servico', label: 'SERVIÇO' },
-    { name: 'inicio', label: 'INÍCIO', type: 'date' },
-    { name: 'termino', label: 'TÉRMINO', type: 'date' },
+    { name: 'cnpj', label: 'CNPJ' }, { name: 'razaoSocial', label: 'RAZÃO SOCIAL' }, { name: 'porte', label: 'PORTE EMPRESARIAL' },
+    { name: 'cpf', label: 'CPF' }, { name: 'rg', label: 'RG' }, { name: 'dataNascimento', label: 'DATA NASCIMENTO', type: 'date' },
+    { name: 'responsavel', label: 'CLIENTE/RESP. LEGAL' }, { name: 'atividade', label: 'ATIVIDADE' }, { name: 'servicoEmpresa', label: 'A SERVIÇO DA EMPRESA' },
+    { name: 'telefone', label: 'TELEFONE' }, { name: 'email', label: 'E-MAIL' }, { name: 'logradouro', label: 'LOGRADOURO' },
+    { name: 'cep', label: 'CEP' }, { name: 'bairro', label: 'BAIRRO' }, { name: 'cidade', label: 'CIDADE' }, { name: 'uf', label: 'UF' },
+    { name: 'servico', label: 'SERVIÇO' }, { name: 'inicio', label: 'INÍCIO', type: 'date' }, { name: 'termino', label: 'TÉRMINO', type: 'date' },
     { name: 'contrato', label: 'Nº CONTRATO' },
   ];
 
   const vendasFields = [
-    { name: 'data', label: 'DATA', type: 'date' },
-    { name: 'diaSemana', label: 'DIA SEMANA' },
-    { name: 'novoCliente', label: 'NOVO CLIENTE' },
-    { name: 'propaganda', label: 'PROPAGANDA' },
-    { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', suggest: true }, 
-    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', suggest: true }, 
-    { name: 'contratacao', label: 'CONTRATAÇÃO' },
-    { name: 'tipoServico', label: 'TIPO DE SERVIÇO' },
-    { name: 'preco', label: 'PREÇO' },
-    { name: 'inicio', label: 'INICIO', type: 'time' },
-    { name: 'termino', label: 'TÉRMINO', type: 'time' },
-    { name: 'totalHoras', label: 'TOTAL HORAS' },
-    { name: 'valorPagar', label: 'VALOR A PAGAR' },
-    { name: 'nf', label: 'N° NF' },
-    { name: 'pagamento', label: 'PAGAMENTO' },
-    { name: 'banco', label: 'BANCO' },
+    { name: 'data', label: 'DATA', type: 'date' }, { name: 'diaSemana', label: 'DIA SEMANA' }, { name: 'novoCliente', label: 'NOVO CLIENTE' },
+    { name: 'propaganda', label: 'PROPAGANDA' }, { name: 'clienteCnpj', label: 'CLIENTE - CNPJ', suggest: true }, 
+    { name: 'clienteCpf', label: 'CLIENTE - CPF (Nome)', suggest: true }, { name: 'contratacao', label: 'CONTRATAÇÃO' },
+    { name: 'tipoServico', label: 'TIPO DE SERVIÇO' }, { name: 'preco', label: 'PREÇO' }, { name: 'inicio', label: 'INICIO', type: 'time' },
+    { name: 'termino', label: 'TÉRMINO', type: 'time' }, { name: 'totalHoras', label: 'TOTAL HORAS' }, { name: 'valorPagar', label: 'VALOR A PAGAR' },
+    { name: 'nf', label: 'N° NF' }, { name: 'pagamento', label: 'PAGAMENTO' }, { name: 'banco', label: 'BANCO' },
   ];
 
-  // --- AGENDA COM DROPDOWNS E HORÁRIOS EM NEGRITO ---
   function Agenda({ bookings, onAdd, onUpdate, onRemove }) {
     const todayStr = new Date().toISOString().slice(0, 10);
     const [currentMonth, setCurrentMonth] = useState(todayStr.slice(0, 7));
@@ -383,88 +381,37 @@
       const list = [];
       for (let d = 1; d <= lastDay; d++) {
         const dd = String(d).padStart(2, "0");
-        const fullDate = `${year}-${String(month).padStart(2, "0")}-${dd}`;
-        const dateObj = new Date(year, month - 1, d);
-        const weekDay = dateObj.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
-        list.push({ date: fullDate, day: dd, weekDay });
+        list.push({ date: `${year}-${String(month).padStart(2, "0")}-${dd}`, day: dd, weekDay: new Date(year, month - 1, d).toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "") });
       }
       return list;
     }, [currentMonth]);
 
-    const dayBookings = bookings
-      .filter((b) => b.date === activeDate)
-      .sort((a, b) => (a.start || "").localeCompare(b.start || ""));
+    const dayBookings = bookings.filter((b) => b.date === activeDate).sort((a, b) => (a.start || "").localeCompare(b.start || ""));
 
-    const submit = (e) => {
-      e.preventDefault();
-      if (!draft.clientName || !draft.room) return;
-      onAdd({ ...draft, id: uid("b_") });
-      setShowForm(false);
-    };
+    const submit = (e) => { e.preventDefault(); if (!draft.clientName || !draft.room) return; onAdd({ ...draft, id: uid("b_") }); setShowForm(false); };
 
     const exportAgendaXLS = () => {
-      const data = bookings.map((b) => ({
-        "Data": b.date.split("-").reverse().join("/"),
-        "Início": b.start || "",
-        "Fim": b.end || "",
-        "Cliente": b.clientName || "",
-        "Espaço / Sala": b.room || "",
-        "Valor": b.price || "",
-        "Observações": b.notes || ""
-      }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Agenda");
-      XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
+      const data = bookings.map((b) => ({ "Data": b.date.split("-").reverse().join("/"), "Início": b.start || "", "Fim": b.end || "", "Cliente": b.clientName || "", "Espaço / Sala": b.room || "", "Valor": b.price || "", "Observações": b.notes || "" }));
+      const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Agenda"); XLSX.writeFile(wb, `Agenda_Nellus_${currentMonth}.xlsx`);
     };
 
     const exportAgendaPDF = () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
-
-      const tableData = bookings
-        .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
-        .map((b) => [
-          b.date.split("-").reverse().join("/"),
-          `${b.start || ""} - ${b.end || ""}`,
-          b.clientName || "",
-          b.room || "",
-          b.price || "",
-          b.notes || ""
-        ]);
-
-      doc.autoTable({
-        head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Valor", "Observações"]],
-        body: tableData,
-        startY: 30,
-        theme: 'striped',
-        headStyles: { fillColor: [14, 110, 86] },
-        styles: { fontSize: 9, font: 'helvetica' }
-      });
-
+      const { jsPDF } = window.jspdf; const doc = new jsPDF();
+      doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("Nellus Coworking - Relatório da Agenda", 14, 18);
+      doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.text(`Mês: ${currentMonth} | Emitido em: ${new Date().toLocaleDateString("pt-BR")}`, 14, 25);
+      const tableData = bookings.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)).map((b) => [ b.date.split("-").reverse().join("/"), `${b.start || ""} - ${b.end || ""}`, b.clientName || "", b.room || "", b.price || "", b.notes || "" ]);
+      doc.autoTable({ head: [["Data", "Horário", "Cliente", "Espaço / Estação", "Valor", "Observações"]], body: tableData, startY: 30, theme: 'striped', headStyles: { fillColor: [14, 110, 86] }, styles: { fontSize: 9, font: 'helvetica' } });
       doc.save(`Agenda_Nellus_${currentMonth}.pdf`);
     };
 
     return (
       <div className="view">
         <div className="view-head">
-          <div>
-            <h2>Agenda ({bookings.length})</h2>
-            <p>Reservas centralizadas com visualização do mês inteiro.</p>
-          </div>
+          <div><h2>Agenda ({bookings.length})</h2><p>Reservas centralizadas com visualização do mês inteiro.</p></div>
           <div className="btn-group">
             <button className="btn-primary outline" onClick={exportAgendaXLS}>📥 XLS</button>
             <button className="btn-primary outline" onClick={exportAgendaPDF}>📄 PDF</button>
-            <button className="btn-primary" onClick={() => {
-              setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", price: "", notes: "" });
-              setShowForm(true);
-            }}>+ Novo agendamento rápido</button>
+            <button className="btn-primary" onClick={() => { setDraft({ clientName: "", date: activeDate, start: "09:00", end: "10:00", room: "", price: "", notes: "" }); setShowForm(true); }}>+ Novo agendamento rápido</button>
           </div>
         </div>
 
@@ -487,9 +434,7 @@
         </div>
 
         <div className="agenda-list">
-          <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--teal-deep)", marginBottom: "4px" }}>
-            Agendamentos para {activeDate.split("-").reverse().join("/")}:
-          </div>
+          <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--teal-deep)", marginBottom: "4px" }}>Agendamentos para {activeDate.split("-").reverse().join("/")}:</div>
           {dayBookings.length === 0 && <div className="empty-state">Nenhum agendamento para este dia.</div>}
           {dayBookings.map((b) => (
             <div className="agenda-row" key={b.id}>
@@ -502,28 +447,12 @@
               <div className="agenda-main">
                 <input className="inline-input" style={{ fontWeight: "bold", fontSize: "14px" }} list="client-list" placeholder="Nome do Cliente..." value={b.clientName || ""} onChange={(e) => onUpdate({ ...b, clientName: e.target.value })} />
                 <div style={{ display: "flex", gap: "8px" }}>
-                  
-                  {/* Dropdown de Espaço / Sala */}
                   <select className="inline-select muted" style={{width: 'auto'}} value={b.room || ""} onChange={(e) => onUpdate({ ...b, room: e.target.value })}>
-                    <option value="">Selecione o espaço...</option>
-                    <option value="Sala privativa 01">Sala privativa 01</option>
-                    <option value="Sala privativa 02">Sala privativa 02</option>
-                    <option value="Estação de trabalho">Estação de trabalho</option>
-                    <option value="Visita">Visita</option>
+                    <option value="">Selecione o espaço...</option><option value="Sala privativa 01">Sala privativa 01</option><option value="Sala privativa 02">Sala privativa 02</option><option value="Estação de trabalho">Estação de trabalho</option><option value="Visita">Visita</option>
                   </select>
-
-                  {/* Dropdown de Valor */}
                   <select className="inline-select" style={{width: 'auto', fontWeight: 'bold', color: 'var(--ink)'}} value={b.price || ""} onChange={(e) => onUpdate({ ...b, price: e.target.value })}>
-                    <option value="">Valor...</option>
-                    <option value="R$ 10,00">R$ 10,00</option>
-                    <option value="R$ 45,00">R$ 45,00</option>
-                    <option value="R$ 49,90">R$ 49,90</option>
-                    <option value="R$ 55,00">R$ 55,00</option>
-                    <option value="R$ 59,90">R$ 59,90</option>
-                    <option value="R$ 65,00">R$ 65,00</option>
-                    <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="">Valor...</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
                   </select>
-
                   <input className="inline-input muted" placeholder="Observações..." value={b.notes || ""} onChange={(e) => onUpdate({ ...b, notes: e.target.value })} />
                 </div>
               </div>
@@ -535,10 +464,7 @@
         {showForm && (
           <Modal title="Novo agendamento" onClose={() => setShowForm(false)}>
             <form onSubmit={submit}>
-              <div className="field">
-                <label>Cliente</label>
-                <input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Digite para buscar..." required autoFocus />
-              </div>
+              <div className="field"><label>Cliente</label><input list="client-list" value={draft.clientName} onChange={(e) => setDraft({ ...draft, clientName: e.target.value })} placeholder="Digite para buscar..." required autoFocus /></div>
               <div className="form-row">
                 <div className="field"><label>Data</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
                 <div className="field"><label>Início</label><input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
@@ -548,24 +474,13 @@
                 <div className="field">
                   <label>Espaço / Sala</label>
                   <select value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} required>
-                    <option value="">Selecione...</option>
-                    <option value="Sala privativa 01">Sala privativa 01</option>
-                    <option value="Sala privativa 02">Sala privativa 02</option>
-                    <option value="Estação de trabalho">Estação de trabalho</option>
-                    <option value="Visita">Visita</option>
+                    <option value="">Selecione...</option><option value="Sala privativa 01">Sala privativa 01</option><option value="Sala privativa 02">Sala privativa 02</option><option value="Estação de trabalho">Estação de trabalho</option><option value="Visita">Visita</option>
                   </select>
                 </div>
                 <div className="field">
                   <label>Valor do Serviço</label>
                   <select style={{fontWeight: 'bold'}} value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })}>
-                    <option value="">Sem valor</option>
-                    <option value="R$ 10,00">R$ 10,00</option>
-                    <option value="R$ 45,00">R$ 45,00</option>
-                    <option value="R$ 49,90">R$ 49,90</option>
-                    <option value="R$ 55,00">R$ 55,00</option>
-                    <option value="R$ 59,90">R$ 59,90</option>
-                    <option value="R$ 65,00">R$ 65,00</option>
-                    <option value="R$ 69,90">R$ 69,90</option>
+                    <option value="">Sem valor</option><option value="R$ 10,00">R$ 10,00</option><option value="R$ 45,00">R$ 45,00</option><option value="R$ 49,90">R$ 49,90</option><option value="R$ 55,00">R$ 55,00</option><option value="R$ 59,90">R$ 59,90</option><option value="R$ 65,00">R$ 65,00</option><option value="R$ 69,90">R$ 69,90</option>
                   </select>
                 </div>
               </div>
@@ -578,8 +493,37 @@
     );
   }
 
+  // --- TELA DE LOGIN ---
+  function LoginScreen({ onLogin, loadingMsg }) {
+    const [email, setEmail] = useState("");
+    const [pwd, setPwd] = useState("");
+    return (
+      <div className="login-container">
+        <form className="login-box" onSubmit={(e) => { e.preventDefault(); onLogin(email, pwd); }}>
+          <h2 style={{ fontFamily: "'Fraunces', serif", textAlign: 'center', color: 'var(--teal-deep)', fontSize: '28px', marginBottom: '8px', marginTop: 0 }}>Nellus Coworking</h2>
+          <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '14px', marginBottom: '24px', marginTop: 0 }}>Área Restrita</p>
+          <div className="field">
+             <label>E-mail de Acesso</label>
+             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" required />
+          </div>
+          <div className="field" style={{marginTop: '16px'}}>
+             <label>Senha</label>
+             <input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="••••••••" required />
+          </div>
+          <button className="btn-primary full" type="submit" style={{marginTop: '28px', padding: '14px', fontSize: '15px'}} disabled={loadingMsg !== ""}>
+            {loadingMsg || "Entrar no Sistema"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   // --- COMPONENTE PRINCIPAL ---
   function NellusApp() {
+    // Estado de Autenticação
+    const [authToken, setAuthToken] = useState(localStorage.getItem("nellus_token") || null);
+    const [loginLoading, setLoginLoading] = useState("");
+
     const [tab, setTab] = useState("agenda");
     const [statusMsg, setStatusMsg] = useState("Conectando...");
     
@@ -588,10 +532,43 @@
     const [clientesPresencial, setClientesPresencial] = useState([]);
     const [vendas, setVendas] = useState([]);
 
+    const handleLogin = async (email, password) => {
+        if (FIREBASE_API_KEY === "COLE_SUA_API_KEY_AQUI") {
+            alert("Atenção: Você ainda não colou a sua API Key no código (Passo 3 das instruções).");
+            return;
+        }
+        setLoginLoading("Verificando...");
+        try {
+            const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password, returnSecureToken: true })
+            });
+            const data = await res.json();
+            if (data.idToken) {
+                setAuthToken(data.idToken);
+                localStorage.setItem("nellus_token", data.idToken);
+            } else {
+                alert("E-mail ou senha incorretos.");
+            }
+        } catch (err) {
+            alert("Erro ao conectar com os servidores de autenticação.");
+        }
+        setLoginLoading("");
+    };
+
+    const handleLogout = () => {
+        setAuthToken(null);
+        localStorage.removeItem("nellus_token");
+    };
+
     const buscarDadosDaNuvem = async () => {
+      if (!authToken) return;
       try {
-        const res = await fetch(`${DB_BASE_URL}.json`);
+        const res = await fetch(`${DB_BASE_URL}.json?auth=${authToken}`);
+        if (res.status === 401) { handleLogout(); return; } // Token expirado ou inválido
         if (!res.ok) { setStatusMsg("⚠️ Erro de Permissão"); return; }
+        
         const data = await res.json();
         if (data) {
           if (data.bookings) {
@@ -608,19 +585,27 @@
     };
 
     const enviarParaNuvem = async (caminho, id, dados) => {
+      if (!authToken) return;
       setStatusMsg("⏳ Salvando...");
       try {
-        if (dados === null) await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "DELETE" });
-        else await fetch(`${DB_BASE_URL}/${caminho}/${id}.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
+        const url = `${DB_BASE_URL}/${caminho}/${id}.json?auth=${authToken}`;
+        if (dados === null) await fetch(url, { method: "DELETE" });
+        else await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
         setStatusMsg("🟢 Salvo na Nuvem");
       } catch (err) { setStatusMsg("⚠️ Erro ao salvar"); }
     };
 
     useEffect(() => {
-      buscarDadosDaNuvem();
-      const interval = setInterval(buscarDadosDaNuvem, 5000);
-      return () => clearInterval(interval);
-    }, []);
+      if (authToken) {
+          buscarDadosDaNuvem();
+          const interval = setInterval(buscarDadosDaNuvem, 5000);
+          return () => clearInterval(interval);
+      }
+    }, [authToken]);
+
+    if (!authToken) {
+        return <LoginScreen onLogin={handleLogin} loadingMsg={loginLoading} />;
+    }
 
     const crudHandler = (stateSetter, collectionName) => ({
       add: (novo) => { stateSetter(prev => [...prev, novo]); enviarParaNuvem(collectionName, novo.id, novo); },
@@ -633,23 +618,63 @@
     const hPresencial = crudHandler(setClientesPresencial, "clientesPresencial");
     const hVendas = crudHandler(setVendas, "vendas");
 
-    // Lógica para Auto-completar Clientes (Busca os nomes já cadastrados nas planilhas)
     const allClientNames = useMemo(() => {
       const names = new Set();
-      clientesVirtual.forEach(c => {
-        if (c.cliente) names.add(c.cliente);
-        if (c.razaoSocial) names.add(c.razaoSocial);
-      });
-      clientesPresencial.forEach(c => {
-        if (c.responsavel) names.add(c.responsavel);
-        if (c.razaoSocial) names.add(c.razaoSocial);
-      });
+      clientesVirtual.forEach(c => { if (c.cliente) names.add(c.cliente); if (c.razaoSocial) names.add(c.razaoSocial); });
+      clientesPresencial.forEach(c => { if (c.responsavel) names.add(c.responsavel); if (c.razaoSocial) names.add(c.razaoSocial); });
       return Array.from(names).filter(Boolean).sort();
     }, [clientesVirtual, clientesPresencial]);
 
+    const handleImportVirtual = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const ws = workbook.Sheets[workbook.SheetNames.includes("CLIENTES - Escritório Virtual") ? "CLIENTES - Escritório Virtual" : workbook.SheetNames[0]];
+        let count = 0;
+        extractDataFromSheet(ws, ["FORMA DE PAGAMENTO", "CLIENTE", "CPF"]).forEach(row => {
+           const id = uid("cv_");
+           const item = { id, cliente: row["CLIENTE"] || "", cpf: row["CPF"] || "", email: row["EMAIL"] || row["E-MAIL"] || "", contato: row["CONTATO"] || "", razaoSocial: row["RAZÃO SOCIAL"] || "", cnpj: row["CNPJ"] || "", dataEntrada: parseExcelDate(row["DATA DE ENTRADA"]), formaPagamento: row["FORMA DE PAGAMENTO"] || "" };
+           if (item.cliente || item.razaoSocial || item.cpf) { hVirtual.add(item); count++; }
+        });
+        alert(`Foram importados ${count} clientes com sucesso!`); e.target.value = null;
+      }; reader.readAsArrayBuffer(file);
+    };
+
+    const handleImportPresencial = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const ws = workbook.Sheets[workbook.SheetNames.includes("CLIENTES - Presencial") ? "CLIENTES - Presencial" : workbook.SheetNames[0]];
+        let count = 0;
+        extractDataFromSheet(ws, ["PORTE EMPRESARIAL", "CLIENTE/RESP. LEGAL", "CNPJ"]).forEach(row => {
+           const id = uid("cp_");
+           const item = { id, cnpj: row["CNPJ"] || "", razaoSocial: row["RAZÃO SOCIAL"] || "", porte: row["PORTE EMPRESARIAL"] || "", cpf: row["CPF"] || "", rg: row["RG"] || "", dataNascimento: parseExcelDate(row["DATA NASCIMENTO"]), responsavel: row["CLIENTE/RESP. LEGAL"] || row["CLIENTE"] || "", atividade: row["ATIVIDADE"] || "", servicoEmpresa: row["A SERVIÇO DA EMPRESA"] || "", telefone: row["TELEFONE"] || "", email: row["E-MAIL"] || row["EMAIL"] || "", logradouro: row["LOGRADOURO"] || "", cep: row["CEP"] || "", bairro: row["BAIRRO"] || "", cidade: row["CIDADE"] || "", uf: row["UF"] || "", servico: row["SERVIÇO"] || "", inicio: parseExcelDate(row["INÍCIO"]) || parseExcelDate(row["INICIO"]), termino: parseExcelDate(row["TÉRMINO"]) || parseExcelDate(row["TERMINO"]), contrato: row["Nº CONTRATO"] || row["N° CONTRATO"] || "" };
+           if (item.responsavel || item.razaoSocial || item.cnpj) { hPresencial.add(item); count++; }
+        });
+        alert(`Foram importados ${count} clientes com sucesso!`); e.target.value = null;
+      }; reader.readAsArrayBuffer(file);
+    };
+
+    const handleImportVendas = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+        const ws = workbook.Sheets[workbook.SheetNames.includes("VENDAS") ? "VENDAS" : workbook.SheetNames[0]];
+        let count = 0;
+        extractDataFromSheet(ws, ["CLIENTE - CPF", "TIPO DE SERVIÇO", "CONTRATAÇÃO"]).forEach(row => {
+           const id = uid("v_");
+           const item = { id, data: parseExcelDate(row["DATA"]), diaSemana: row["DIA SEMANA"] || "", novoCliente: row["NOVO CLIENTE"] || "", propaganda: row["PROPAGANDA"] || "", clienteCnpj: row["CLIENTE - CNPJ"] || "", clienteCpf: row["CLIENTE - CPF"] || "", contratacao: row["CONTRATAÇÃO"] || "", tipoServico: row["TIPO DE SERVIÇO"] || "", preco: row["PREÇO"] || row["PRECO"] || row["PREÇO "] || "", inicio: decimalToTime(row["INICIO"]) || decimalToTime(row["INÍCIO"]) || "", termino: decimalToTime(row["TÉRMINO"]) || decimalToTime(row["TERMINO"]) || "", totalHoras: row["TOTAL HORAS"] || "", valorPagar: row["VALOR A PAGAR"] || "", nf: row["N° NF"] || row["Nº NF"] || "", pagamento: row["PAGAMENTO"] || "", banco: row["BANCO"] || "" };
+           if (item.data || item.clienteCpf || item.tipoServico || item.preco) { hVendas.add(item); count++; }
+        });
+        alert(`Foram importadas ${count} vendas com sucesso!`); e.target.value = null;
+      }; reader.readAsArrayBuffer(file);
+    };
+
     return (
       <div className="nellus-app">
-        {/* Renderiza a lista de auto-completar na raiz para ficar disponível no app todo */}
         <datalist id="client-list">
           {allClientNames.map(name => <option key={name} value={name} />)}
         </datalist>
@@ -663,53 +688,22 @@
             </div>
           </div>
           <nav className="nav">
-            <button className={"nav-item" + (tab === "agenda" ? " active" : "")} onClick={() => setTab("agenda")}>
-              📅 Agenda
-            </button>
-            <button className={"nav-item" + (tab === "virtual" ? " active" : "")} onClick={() => setTab("virtual")}>
-              💻 Escritório Virtual
-            </button>
-            <button className={"nav-item" + (tab === "presencial" ? " active" : "")} onClick={() => setTab("presencial")}>
-              🏢 Cliente Presencial
-            </button>
-            <button className={"nav-item" + (tab === "vendas" ? " active" : "")} onClick={() => setTab("vendas")}>
-              💰 Vendas
-            </button>
+            <button className={"nav-item" + (tab === "agenda" ? " active" : "")} onClick={() => setTab("agenda")}>📅 Agenda</button>
+            <button className={"nav-item" + (tab === "virtual" ? " active" : "")} onClick={() => setTab("virtual")}>💻 Escritório Virtual</button>
+            <button className={"nav-item" + (tab === "presencial" ? " active" : "")} onClick={() => setTab("presencial")}>🏢 Cliente Presencial</button>
+            <button className={"nav-item" + (tab === "vendas" ? " active" : "")} onClick={() => setTab("vendas")}>💰 Vendas</button>
           </nav>
-          <div className="sidebar-foot">
-            <b>Vercel + Firebase</b><br />
-            Digitação direta e salvamento automático.
+          <div className="sidebar-foot" style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+            <div><b>Vercel + Firebase</b><br />Protegido por Autenticação.</div>
+            <button className="btn-primary secondary outline" onClick={handleLogout} style={{justifyContent: 'center', width: 'fit-content'}}>Sair (Logout)</button>
           </div>
         </aside>
 
         <main className="main">
-          {tab === "agenda" && (
-            <Agenda bookings={bookings} onAdd={hBookings.add} onUpdate={hBookings.update} onRemove={hBookings.remove} />
-          )}
-          {tab === "virtual" && (
-             <SpreadsheetView 
-                title="Escritório Virtual" 
-                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
-                data={clientesVirtual} fields={virtualFields}
-                onAdd={hVirtual.add} onUpdate={hVirtual.update} onRemove={hVirtual.remove} 
-             />
-          )}
-          {tab === "presencial" && (
-             <SpreadsheetView 
-                title="Clientes Presenciais" 
-                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
-                data={clientesPresencial} fields={presencialFields}
-                onAdd={hPresencial.add} onUpdate={hPresencial.update} onRemove={hPresencial.remove} 
-             />
-          )}
-          {tab === "vendas" && (
-             <SpreadsheetView 
-                title="Vendas" 
-                description="Planilha editável: preencha e o app salva automaticamente ao sair da célula."
-                data={vendas} fields={vendasFields}
-                onAdd={hVendas.add} onUpdate={hVendas.update} onRemove={hVendas.remove} 
-             />
-          )}
+          {tab === "agenda" && <Agenda bookings={bookings} onAdd={hBookings.add} onUpdate={hBookings.update} onRemove={hBookings.remove} />}
+          {tab === "virtual" && <SpreadsheetView title="Escritório Virtual" description="Planilha editável: preencha e o app salva automaticamente." data={clientesVirtual} fields={virtualFields} onAdd={hVirtual.add} onUpdate={hVirtual.update} onRemove={hVirtual.remove} onImport={handleImportVirtual} />}
+          {tab === "presencial" && <SpreadsheetView title="Clientes Presenciais" description="Planilha editável: preencha e o app salva automaticamente." data={clientesPresencial} fields={presencialFields} onAdd={hPresencial.add} onUpdate={hPresencial.update} onRemove={hPresencial.remove} onImport={handleImportPresencial} />}
+          {tab === "vendas" && <SpreadsheetView title="Vendas" description="Planilha editável: preencha e o app salva automaticamente." data={vendas} fields={vendasFields} onAdd={hVendas.add} onUpdate={hVendas.update} onRemove={hVendas.remove} onImport={handleImportVendas} />}
         </main>
       </div>
     );
